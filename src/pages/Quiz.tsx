@@ -233,7 +233,8 @@ export default function Quiz() {
                   {current < questions.length - 1 ? (
                     <button
                       onClick={() => setCurrent(current + 1)}
-                      className="flex items-center gap-1.5 text-sm text-primary font-medium hover:underline"
+                      disabled={answers[current] === null}
+                      className="flex items-center gap-1.5 text-sm text-primary font-medium hover:underline disabled:opacity-40 disabled:cursor-not-allowed disabled:no-underline"
                     >
                       Próxima <ArrowRight size={16} />
                     </button>
