@@ -5,7 +5,19 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ThermometerGauge from "@/components/ThermometerGauge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { obterDeputado, obterEventos, obterProposicoes, type DeputadoDetalhe, type Evento, type Proposicao } from "@/lib/camaraApi";
+import { calcularTermometro, getCachedResult, setCachedResult, type TermometroResult } from "@/services/termometroService";
+
+const DIMENSAO_META: Record<string, { nome: string; peso: number }> = {
+  economica: { nome: "Econômica", peso: 25 },
+  social: { nome: "Social/Costumes", peso: 20 },
+  seguranca: { nome: "Segurança", peso: 15 },
+  ambiental: { nome: "Ambiental", peso: 10 },
+  educacao: { nome: "Educação/Cultura", peso: 10 },
+  democracia: { nome: "Democracia/Institucional", peso: 15 },
+  saude: { nome: "Saúde/Bem-Estar", peso: 5 },
+};
 
 function DimensionBar({ nome, score, peso }: { nome: string; score: number; peso: number }) {
   const pct = ((score + 100) / 200) * 100;
@@ -36,16 +48,6 @@ function getScoreLabel(score: number) {
   return "Extrema Direita";
 }
 
-const placeholderDimensoes = [
-  { nome: "Econômica", score: 0, peso: 25 },
-  { nome: "Social/Costumes", score: 0, peso: 20 },
-  { nome: "Segurança", score: 0, peso: 15 },
-  { nome: "Ambiental", score: 0, peso: 10 },
-  { nome: "Educação/Cultura", score: 0, peso: 10 },
-  { nome: "Democracia/Institucional", score: 0, peso: 15 },
-  { nome: "Saúde/Bem-Estar", score: 0, peso: 5 },
-];
-
 export default function PerfilPolitico() {
   const { id } = useParams<{ id: string }>();
   const [deputado, setDeputado] = useState<DeputadoDetalhe | null>(null);
@@ -54,6 +56,10 @@ export default function PerfilPolitico() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [termometro, setTermometro] = useState<TermometroResult | null>(null);
+  const [termometroLoading, setTermometroLoading] = useState(false);
+
+  // Load deputy data
   useEffect(() => {
     if (!id) return;
     setLoading(true);
@@ -72,6 +78,30 @@ export default function PerfilPolitico() {
       .catch(() => setError("Não foi possível carregar os dados deste deputado."))
       .finally(() => setLoading(false));
   }, [id]);
+
+  // Calculate thermometer after data loads
+  useEffect(() => {
+    if (!id || !deputado || loading) return;
+
+    const cached = getCachedResult(id);
+    if (cached) {
+      setTermometro(cached);
+      return;
+    }
+
+    setTermometroLoading(true);
+    const nome = deputado.ultimoStatus.nomeEleitoral || deputado.ultimoStatus.nome;
+
+    calcularTermometro(nome, eventos, proposicoes)
+      .then((result) => {
+        setTermometro(result);
+        setCachedResult(id, result);
+      })
+      .catch(() => {
+        // silently fail — keep placeholder
+      })
+      .finally(() => setTermometroLoading(false));
+  }, [id, deputado, loading, eventos, proposicoes]);
 
   if (loading) {
     return (
@@ -100,7 +130,19 @@ export default function PerfilPolitico() {
   }
 
   const status = deputado.ultimoStatus;
-  const score = 0;
+  const score = termometro?.score ?? 0;
+
+  const dimensoes = termometro
+    ? Object.entries(DIMENSAO_META).map(([key, meta]) => ({
+        nome: meta.nome,
+        score: termometro.dimensoes[key] ?? 0,
+        peso: meta.peso,
+      }))
+    : Object.entries(DIMENSAO_META).map(([, meta]) => ({
+        nome: meta.nome,
+        score: 0,
+        peso: meta.peso,
+      }));
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -136,13 +178,37 @@ export default function PerfilPolitico() {
               </div>
 
               <div className="shrink-0">
-                <ThermometerGauge score={score} size="md" />
-                <p className="text-center text-primary-foreground/70 text-sm font-medium mt-1">
-                  {getScoreLabel(score)}
-                </p>
-                <p className="text-center text-primary-foreground/40 text-[10px] mt-0.5">
-                  Score em desenvolvimento
-                </p>
+                {termometroLoading ? (
+                  <div className="flex flex-col items-center gap-2 py-4">
+                    <Loader2 size={24} className="animate-spin text-primary-foreground/60" />
+                    <p className="text-primary-foreground/60 text-xs">Calculando termômetro...</p>
+                  </div>
+                ) : (
+                  <>
+                    <ThermometerGauge score={score} size="md" />
+                    <p className="text-center text-primary-foreground/70 text-sm font-medium mt-1">
+                      {getScoreLabel(score)}
+                    </p>
+                    {termometro?.resumo ? (
+                      <p className="text-center text-primary-foreground/50 text-xs mt-1 italic max-w-[240px]">
+                        {termometro.resumo}
+                      </p>
+                    ) : (
+                      <p className="text-center text-primary-foreground/40 text-[10px] mt-0.5">
+                        Score em desenvolvimento
+                      </p>
+                    )}
+                    {termometro?.pautas && termometro.pautas.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-2 justify-center max-w-[260px]">
+                        {termometro.pautas.map((p, i) => (
+                          <Badge key={i} variant="secondary" className="text-[10px] px-2 py-0.5">
+                            {p}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -154,13 +220,15 @@ export default function PerfilPolitico() {
             <div className="max-w-3xl mx-auto">
               <h2 className="font-heading text-xl font-bold mb-4">Análise por Dimensão</h2>
               <div className="space-y-4 bg-card rounded-2xl border border-border p-6">
-                {placeholderDimensoes.map((d) => (
+                {dimensoes.map((d) => (
                   <DimensionBar key={d.nome} nome={d.nome} score={d.score} peso={d.peso} />
                 ))}
               </div>
-              <p className="text-xs text-muted-foreground mt-3">
-                ⚖️ Algoritmo de pontuação em desenvolvimento — dados preliminares.
-              </p>
+              {!termometro && (
+                <p className="text-xs text-muted-foreground mt-3">
+                  ⚖️ Algoritmo de pontuação em desenvolvimento — dados preliminares.
+                </p>
+              )}
             </div>
           </div>
         </section>
@@ -182,7 +250,6 @@ export default function PerfilPolitico() {
                   </TabsTrigger>
                 </TabsList>
 
-                {/* Votações (eventos/sessões) */}
                 <TabsContent value="votacoes">
                   {eventos.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-8">Nenhuma votação/evento encontrado.</p>
@@ -207,7 +274,6 @@ export default function PerfilPolitico() {
                   )}
                 </TabsContent>
 
-                {/* Projetos (proposições) */}
                 <TabsContent value="projetos">
                   {proposicoes.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-8">Nenhuma proposição encontrada.</p>
@@ -223,7 +289,6 @@ export default function PerfilPolitico() {
                   )}
                 </TabsContent>
 
-                {/* Dados Pessoais */}
                 <TabsContent value="dados">
                   <div className="bg-card rounded-2xl border border-border p-6 space-y-4">
                     <InfoRow label="Nome Civil" value={deputado.nomeCivil} />
