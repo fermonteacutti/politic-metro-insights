@@ -62,6 +62,7 @@ export default function PerfilPolitico() {
   // Load deputy data
   useEffect(() => {
     if (!id) return;
+    console.log("[PerfilPolitico] ID recebido da rota:", id);
     setLoading(true);
     setError(null);
 
@@ -71,11 +72,15 @@ export default function PerfilPolitico() {
       obterProposicoes(id).catch(() => [] as Proposicao[]),
     ])
       .then(([dep, evt, prop]) => {
+        console.log("[PerfilPolitico] Deputado carregado:", dep?.ultimoStatus?.nome);
         setDeputado(dep);
         setEventos(evt);
         setProposicoes(prop);
       })
-      .catch(() => setError("Não foi possível carregar os dados deste deputado."))
+      .catch((err) => {
+        console.error("[PerfilPolitico] Erro ao carregar:", err);
+        setError(`Erro ao carregar deputado (ID: ${id}): ${err.message}`);
+      })
       .finally(() => setLoading(false));
   }, [id]);
 
