@@ -31,12 +31,6 @@ const features = [
   },
 ];
 
-const demoScores = [
-  { name: "Exemplo A", score: -45 },
-  { name: "Exemplo B", score: 12 },
-  { name: "Exemplo C", score: 67 },
-];
-
 export default function Index() {
   const [searchQuery, setSearchQuery] = useState("");
   const [demoIndex, setDemoIndex] = useState(1);
