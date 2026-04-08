@@ -88,15 +88,19 @@ export default function Index() {
               <div className="flex items-center bg-card rounded-2xl shadow-2xl p-1.5">
                 <div className="flex items-center flex-1 px-4 gap-3">
                   <Search size={20} className="text-muted-foreground shrink-0" />
-                  <input
+                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                     placeholder="Digite o nome de um político..."
                     className="w-full py-3 bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none text-base"
                   />
                 </div>
-                <button className="shrink-0 px-6 py-3 bg-primary text-primary-foreground font-semibold rounded-xl hover:opacity-90 transition-opacity">
+                <button
+                  onClick={handleSearch}
+                  className="shrink-0 px-6 py-3 bg-primary text-primary-foreground font-semibold rounded-xl hover:opacity-90 transition-opacity"
+                >
                   Buscar
                 </button>
               </div>
