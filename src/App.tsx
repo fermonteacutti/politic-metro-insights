@@ -9,6 +9,7 @@ import CidadaniaEmFoco from "./pages/CidadaniaEmFoco.tsx";
 import Metodologia from "./pages/Metodologia.tsx";
 import Quiz from "./pages/Quiz.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import ScrollToTop from "./components/ScrollToTop.tsx";
 
 const queryClient = new QueryClient();
 
@@ -18,6 +19,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <ScrollToTop />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/politico/:id" element={<PerfilPolitico />} />
