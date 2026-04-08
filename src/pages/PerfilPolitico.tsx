@@ -140,6 +140,7 @@ export default function PerfilPolitico() {
 
   const status = deputado.ultimoStatus;
   const score = termometro?.score ?? 0;
+  console.log("[PerfilPolitico] Score para gauge:", score, "| Termômetro:", termometro);
 
   const dimensoes = termometro
     ? Object.entries(DIMENSAO_META).map(([key, meta]) => ({
