@@ -27,8 +27,25 @@ export async function calcularTermometro(
     throw new Error(`Erro ao calcular termômetro: ${response.status} - ${errorText}`);
   }
 
-  const resultado = await response.json();
-  console.log("[Termômetro] Resultado:", resultado);
+  const raw = await response.json();
+  console.log("[Termômetro] Resultado bruto:", JSON.stringify(raw));
+
+  // Defensive: score may be string or nested
+  const score = typeof raw.score === "number" ? raw.score : Number(raw.score) || 0;
+  const resumo = raw.resumo || "";
+  const pautas = Array.isArray(raw.pautas) ? raw.pautas : [];
+
+  // Normalize dimensoes — ensure all 7 keys are numbers
+  const dimKeys = ["economica", "social", "seguranca", "ambiental", "educacao", "democracia", "saude"];
+  const rawDim = raw.dimensoes || {};
+  const dimensoes: Record<string, number> = {};
+  for (const k of dimKeys) {
+    const v = rawDim[k];
+    dimensoes[k] = typeof v === "number" ? v : Number(v) || 0;
+  }
+
+  const resultado: TermometroResult = { score, resumo, dimensoes, pautas };
+  console.log("[Termômetro] Resultado normalizado:", resultado);
   return resultado;
 }
 

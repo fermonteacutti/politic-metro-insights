@@ -42,9 +42,11 @@ function DimensionBar({ nome, score, peso }: { nome: string; score: number; peso
 
 function getScoreLabel(score: number) {
   if (score <= -60) return "Extrema Esquerda";
-  if (score <= -20) return "Centro-Esquerda";
-  if (score <= 19) return "Centro";
-  if (score <= 59) return "Centro-Direita";
+  if (score <= -20) return "Esquerda";
+  if (score <= -5) return "Centro-Esquerda";
+  if (score <= 5) return "Centro";
+  if (score <= 20) return "Centro-Direita";
+  if (score <= 60) return "Direita";
   return "Extrema Direita";
 }
 
@@ -138,6 +140,7 @@ export default function PerfilPolitico() {
 
   const status = deputado.ultimoStatus;
   const score = termometro?.score ?? 0;
+  console.log("[PerfilPolitico] Score para gauge:", score, "| Termômetro:", termometro);
 
   const dimensoes = termometro
     ? Object.entries(DIMENSAO_META).map(([key, meta]) => ({
