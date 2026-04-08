@@ -12,14 +12,24 @@ export async function calcularTermometro(
   votacoes: any[],
   proposicoes: any[]
 ): Promise<TermometroResult> {
+  console.log(`[Termômetro] Chamando termômetro para: ${nomePolitico}`);
+  console.log(`[Termômetro] Votações: ${votacoes.length}, Proposições: ${proposicoes.length}`);
+
   const response = await fetch(`${WORKER_URL}/termometro`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ nomePolitico, votacoes, proposicoes }),
   });
 
-  if (!response.ok) throw new Error("Erro ao calcular termômetro");
-  return response.json();
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("[Termômetro] Erro:", { status: response.status, text: errorText });
+    throw new Error(`Erro ao calcular termômetro: ${response.status} - ${errorText}`);
+  }
+
+  const resultado = await response.json();
+  console.log("[Termômetro] Resultado:", resultado);
+  return resultado;
 }
 
 const CACHE_PREFIX = "termometro_";

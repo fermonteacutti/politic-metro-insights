@@ -96,14 +96,16 @@ export default function PerfilPolitico() {
 
     setTermometroLoading(true);
     const nome = deputado.ultimoStatus.nomeEleitoral || deputado.ultimoStatus.nome;
+    console.log("[PerfilPolitico] Iniciando cálculo do termômetro para:", nome, "| Votações:", eventos.length, "| Proposições:", proposicoes.length);
 
     calcularTermometro(nome, eventos, proposicoes)
       .then((result) => {
+        console.log("[PerfilPolitico] Termômetro calculado com sucesso:", result);
         setTermometro(result);
         setCachedResult(id, result);
       })
-      .catch(() => {
-        // silently fail — keep placeholder
+      .catch((err) => {
+        console.error("[PerfilPolitico] Erro termômetro:", err);
       })
       .finally(() => setTermometroLoading(false));
   }, [id, deputado, loading, eventos, proposicoes]);
