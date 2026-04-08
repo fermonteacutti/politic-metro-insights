@@ -4,7 +4,9 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ThermometerGauge from "@/components/ThermometerGauge";
 import LeiDoDiaCard from "@/components/LeiDoDiaCard";
+import SearchResults from "@/components/SearchResults";
 import { Link } from "react-router-dom";
+import { buscarDeputados, type DeputadoResumo } from "@/lib/camaraApi";
 
 const features = [
   {
@@ -38,6 +40,26 @@ const demoScores = [
 export default function Index() {
   const [searchQuery, setSearchQuery] = useState("");
   const [demoIndex, setDemoIndex] = useState(1);
+  const [searchResults, setSearchResults] = useState<DeputadoResumo[] | null>(null);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [searched, setSearched] = useState(false);
+
+  const handleSearch = async () => {
+    const q = searchQuery.trim();
+    if (!q) return;
+    setSearchLoading(true);
+    setSearchError(null);
+    setSearched(true);
+    try {
+      const data = await buscarDeputados(q);
+      setSearchResults(data);
+    } catch {
+      setSearchError("Erro ao buscar deputados. Tente novamente.");
+    } finally {
+      setSearchLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -66,25 +88,41 @@ export default function Index() {
               <div className="flex items-center bg-card rounded-2xl shadow-2xl p-1.5">
                 <div className="flex items-center flex-1 px-4 gap-3">
                   <Search size={20} className="text-muted-foreground shrink-0" />
-                  <input
+                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                     placeholder="Digite o nome de um político..."
                     className="w-full py-3 bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none text-base"
                   />
                 </div>
-                <button className="shrink-0 px-6 py-3 bg-primary text-primary-foreground font-semibold rounded-xl hover:opacity-90 transition-opacity">
+                <button
+                  onClick={handleSearch}
+                  className="shrink-0 px-6 py-3 bg-primary text-primary-foreground font-semibold rounded-xl hover:opacity-90 transition-opacity"
+                >
                   Buscar
                 </button>
               </div>
               <p className="text-primary-foreground/50 text-xs mt-3">
                 Ex: Lula, Bolsonaro, Marina Silva, Simone Tebet...
               </p>
-            </div>
+           </div>
           </div>
         </div>
       </section>
+
+      {/* Search Results */}
+      {searched && (
+        <section className="py-10">
+          <div className="container">
+            <div className="max-w-4xl mx-auto">
+              <h2 className="font-heading text-xl font-bold mb-4">Resultados da Busca</h2>
+              <SearchResults results={searchResults} loading={searchLoading} error={searchError} searched={searched} />
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Demo Thermometer */}
       <section className="py-16 md:py-20">

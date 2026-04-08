@@ -1,45 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, MapPin, Building2, Calendar, ExternalLink, FileText, Vote, Newspaper, Gavel, DollarSign } from "lucide-react";
+import { ArrowLeft, MapPin, Building2, Calendar, ExternalLink, FileText, Vote, Newspaper, Gavel, DollarSign, Loader2 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ThermometerGauge from "@/components/ThermometerGauge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { obterDeputado, obterVotacoes, obterProposicoes, type DeputadoDetalhe, type Votacao, type Proposicao } from "@/lib/camaraApi";
 
-// Demo data — will be replaced with API calls
-const demoPolitico = {
-  nome: "Exemplo de Político",
-  partido: "PARTIDO",
-  uf: "SP",
-  cargo: "Deputado(a) Federal",
-  foto: null,
-  mandatoInicio: "2023",
-  score: 23,
-  dimensoes: [
-    { nome: "Econômica", score: 35, peso: 25 },
-    { nome: "Social/Costumes", score: -12, peso: 20 },
-    { nome: "Segurança", score: 45, peso: 15 },
-    { nome: "Ambiental", score: -30, peso: 10 },
-    { nome: "Educação/Cultura", score: 10, peso: 10 },
-    { nome: "Democracia/Institucional", score: 20, peso: 15 },
-    { nome: "Saúde/Bem-Estar", score: -5, peso: 5 },
-  ],
-  projetos: [
-    { titulo: "PL 1234/2024 — Reforma Tributária", status: "Em tramitação", data: "15/03/2024" },
-    { titulo: "PL 5678/2023 — Programa Social", status: "Aprovado", data: "22/11/2023" },
-    { titulo: "PL 9012/2023 — Segurança Pública", status: "Em análise", data: "05/08/2023" },
-  ],
-  votacoes: [
-    { tema: "PEC da Reforma Administrativa", voto: "Sim", data: "10/04/2024" },
-    { tema: "PL das Fake News", voto: "Não", data: "28/03/2024" },
-    { tema: "LOA 2024", voto: "Sim", data: "15/12/2023" },
-    { tema: "Marco Legal das Garantias", voto: "Abstenção", data: "01/11/2023" },
-  ],
-  noticias: [
-    { titulo: "Político defende nova proposta de reforma", fonte: "Folha", data: "02/04/2024" },
-    { titulo: "Bancada articula votação para semana que vem", fonte: "G1", data: "28/03/2024" },
-  ],
-};
+// --- Sub-components ---
 
 function DimensionBar({ nome, score, peso }: { nome: string; score: number; peso: number }) {
   const pct = ((score + 100) / 200) * 100;
@@ -70,9 +38,74 @@ function getScoreLabel(score: number) {
   return "Extrema Direita";
 }
 
+// Placeholder dimensions (will be replaced by real algorithm later)
+const placeholderDimensoes = [
+  { nome: "Econômica", score: 0, peso: 25 },
+  { nome: "Social/Costumes", score: 0, peso: 20 },
+  { nome: "Segurança", score: 0, peso: 15 },
+  { nome: "Ambiental", score: 0, peso: 10 },
+  { nome: "Educação/Cultura", score: 0, peso: 10 },
+  { nome: "Democracia/Institucional", score: 0, peso: 15 },
+  { nome: "Saúde/Bem-Estar", score: 0, peso: 5 },
+];
+
+// --- Main page ---
+
 export default function PerfilPolitico() {
-  const { id } = useParams();
-  const pol = demoPolitico;
+  const { id } = useParams<{ id: string }>();
+  const [deputado, setDeputado] = useState<DeputadoDetalhe | null>(null);
+  const [votacoes, setVotacoes] = useState<Votacao[]>([]);
+  const [proposicoes, setProposicoes] = useState<Proposicao[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!id) return;
+    setLoading(true);
+    setError(null);
+
+    Promise.all([
+      obterDeputado(id),
+      obterVotacoes(id).catch(() => [] as Votacao[]),
+      obterProposicoes(id).catch(() => [] as Proposicao[]),
+    ])
+      .then(([dep, vot, prop]) => {
+        setDeputado(dep);
+        setVotacoes(vot);
+        setProposicoes(prop);
+      })
+      .catch(() => setError("Não foi possível carregar os dados deste deputado."))
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 flex items-center justify-center text-muted-foreground gap-2">
+          <Loader2 size={20} className="animate-spin" />
+          <span className="text-sm">Carregando perfil...</span>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error || !deputado) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 flex flex-col items-center justify-center text-center px-4">
+          <p className="text-destructive font-medium mb-2">{error || "Deputado não encontrado."}</p>
+          <Link to="/" className="text-sm text-primary hover:underline">← Voltar à busca</Link>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  const status = deputado.ultimoStatus;
+  const score = 0; // placeholder until algorithm is implemented
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -88,31 +121,34 @@ export default function PerfilPolitico() {
 
             <div className="flex flex-col md:flex-row gap-6 items-start">
               {/* Avatar */}
-              <div className="w-24 h-24 rounded-2xl bg-primary-foreground/10 flex items-center justify-center shrink-0">
-                <span className="text-4xl font-bold text-primary-foreground/60">
-                  {pol.nome.charAt(0)}
-                </span>
-              </div>
+              <img
+                src={status.urlFoto}
+                alt={status.nome}
+                className="w-24 h-24 rounded-2xl object-cover bg-secondary shrink-0"
+              />
 
               <div className="flex-1">
                 <h1 className="font-heading text-3xl md:text-4xl font-bold text-primary-foreground mb-2">
-                  {pol.nome}
+                  {status.nomeEleitoral || status.nome}
                 </h1>
                 <div className="flex flex-wrap gap-3 text-primary-foreground/70 text-sm">
-                  <span className="flex items-center gap-1"><Building2 size={14} /> {pol.partido}</span>
-                  <span className="flex items-center gap-1"><MapPin size={14} /> {pol.uf}</span>
-                  <span className="flex items-center gap-1"><Calendar size={14} /> Mandato desde {pol.mandatoInicio}</span>
+                  <span className="flex items-center gap-1"><Building2 size={14} /> {status.siglaPartido}</span>
+                  <span className="flex items-center gap-1"><MapPin size={14} /> {status.siglaUf}</span>
+                  <span className="flex items-center gap-1"><Calendar size={14} /> {status.situacao}</span>
                 </div>
                 <p className="mt-2 text-primary-foreground/50 text-xs">
-                  {pol.cargo} · ID: {id || "demo"}
+                  Deputado(a) Federal · ID: {id}
                 </p>
               </div>
 
               {/* Thermometer */}
               <div className="shrink-0">
-                <ThermometerGauge score={pol.score} size="md" />
+                <ThermometerGauge score={score} size="md" />
                 <p className="text-center text-primary-foreground/70 text-sm font-medium mt-1">
-                  {getScoreLabel(pol.score)}
+                  {getScoreLabel(score)}
+                </p>
+                <p className="text-center text-primary-foreground/40 text-[10px] mt-0.5">
+                  Score em desenvolvimento
                 </p>
               </div>
             </div>
@@ -125,12 +161,12 @@ export default function PerfilPolitico() {
             <div className="max-w-3xl mx-auto">
               <h2 className="font-heading text-xl font-bold mb-4">Análise por Dimensão</h2>
               <div className="space-y-4 bg-card rounded-2xl border border-border p-6">
-                {pol.dimensoes.map((d) => (
+                {placeholderDimensoes.map((d) => (
                   <DimensionBar key={d.nome} nome={d.nome} score={d.score} peso={d.peso} />
                 ))}
               </div>
               <p className="text-xs text-muted-foreground mt-3">
-                ⚖️ Termômetro baseado em dados públicos — não representa opinião editorial.
+                ⚖️ Algoritmo de pontuação em desenvolvimento — dados preliminares.
               </p>
             </div>
           </div>
@@ -156,57 +192,54 @@ export default function PerfilPolitico() {
                   </TabsTrigger>
                 </TabsList>
 
+                {/* Projetos (proposições) */}
                 <TabsContent value="projetos">
-                  <div className="space-y-3">
-                    {pol.projetos.map((p, i) => (
-                      <div key={i} className="flex items-center justify-between p-4 rounded-xl border border-border bg-card">
-                        <div>
-                          <p className="font-medium text-sm">{p.titulo}</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">{p.data}</p>
+                  {proposicoes.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-8">Nenhuma proposição encontrada.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {proposicoes.map((p) => (
+                        <div key={p.id} className="p-4 rounded-xl border border-border bg-card">
+                          <p className="font-medium text-sm">{p.siglaTipo} {p.numero}/{p.ano}</p>
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{p.ementa}</p>
                         </div>
-                        <span className="text-xs px-2.5 py-1 rounded-full bg-secondary font-medium">
-                          {p.status}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </TabsContent>
 
+                {/* Votações */}
                 <TabsContent value="votacoes">
-                  <div className="space-y-3">
-                    {pol.votacoes.map((v, i) => (
-                      <div key={i} className="flex items-center justify-between p-4 rounded-xl border border-border bg-card">
-                        <div>
-                          <p className="font-medium text-sm">{v.tema}</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">{v.data}</p>
+                  {votacoes.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-8">Nenhuma votação encontrada.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {votacoes.map((v) => (
+                        <div key={v.id} className="flex items-center justify-between p-4 rounded-xl border border-border bg-card">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-medium text-sm truncate">{v.descricao || v.siglaOrgao}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              {new Date(v.dataHoraRegistro || v.data).toLocaleDateString("pt-BR")}
+                            </p>
+                          </div>
+                          <span className="text-xs px-2.5 py-1 rounded-full bg-secondary font-medium shrink-0 ml-2">
+                            {v.siglaOrgao}
+                          </span>
                         </div>
-                        <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
-                          v.voto === "Sim" ? "bg-thermo-center-right/20 text-thermo-right" :
-                          v.voto === "Não" ? "bg-destructive/10 text-destructive" :
-                          "bg-secondary text-muted-foreground"
-                        }`}>
-                          {v.voto}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </TabsContent>
 
+                {/* Notícias */}
                 <TabsContent value="noticias">
-                  <div className="space-y-3">
-                    {pol.noticias.map((n, i) => (
-                      <div key={i} className="flex items-center justify-between p-4 rounded-xl border border-border bg-card">
-                        <div>
-                          <p className="font-medium text-sm">{n.titulo}</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">{n.fonte} · {n.data}</p>
-                        </div>
-                        <ExternalLink size={14} className="text-muted-foreground shrink-0" />
-                      </div>
-                    ))}
-                    <p className="text-xs text-muted-foreground">Fontes externas são de responsabilidade de seus veículos.</p>
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Newspaper size={32} className="mx-auto mb-3 opacity-40" />
+                    <p className="text-sm">Notícias serão integradas em breve.</p>
                   </div>
                 </TabsContent>
 
+                {/* Financeiro */}
                 <TabsContent value="financeiro">
                   <div className="text-center py-12 text-muted-foreground">
                     <DollarSign size={32} className="mx-auto mb-3 opacity-40" />
