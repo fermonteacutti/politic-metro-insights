@@ -127,7 +127,7 @@ export default function ThermometerGauge({
         </g>
 
         {/* Center dot */}
-        <circle cx={cx} cy={cy} r={dim * 0.025} fill="hsl(var(--foreground))" />
+        <circle cx={cx} cy={cy} r={dim * 0.03} fill="#FBBF24" />
       </svg>
 
       {showLabels && (

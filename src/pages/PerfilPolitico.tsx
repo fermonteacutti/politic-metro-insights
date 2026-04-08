@@ -160,7 +160,7 @@ export default function PerfilPolitico() {
 
       <main className="flex-1">
         {/* Top bar */}
-        <div className="bg-hero py-8">
+        <div className="bg-hero py-6">
           <div className="container">
             <Link to="/" className="inline-flex items-center gap-1.5 text-primary-foreground/70 hover:text-primary-foreground text-sm mb-6">
               <ArrowLeft size={16} /> Voltar
