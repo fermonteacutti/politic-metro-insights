@@ -4,7 +4,9 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ThermometerGauge from "@/components/ThermometerGauge";
 import LeiDoDiaCard from "@/components/LeiDoDiaCard";
+import SearchResults from "@/components/SearchResults";
 import { Link } from "react-router-dom";
+import { buscarDeputados, type DeputadoResumo } from "@/lib/camaraApi";
 
 const features = [
   {
