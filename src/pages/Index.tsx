@@ -107,10 +107,22 @@ export default function Index() {
               <p className="text-primary-foreground/50 text-xs mt-3">
                 Ex: Lula, Bolsonaro, Marina Silva, Simone Tebet...
               </p>
-            </div>
+           </div>
           </div>
         </div>
       </section>
+
+      {/* Search Results */}
+      {searched && (
+        <section className="py-10">
+          <div className="container">
+            <div className="max-w-4xl mx-auto">
+              <h2 className="font-heading text-xl font-bold mb-4">Resultados da Busca</h2>
+              <SearchResults results={searchResults} loading={searchLoading} error={searchError} searched={searched} />
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Demo Thermometer */}
       <section className="py-16 md:py-20">
