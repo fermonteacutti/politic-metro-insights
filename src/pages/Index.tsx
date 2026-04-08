@@ -40,6 +40,26 @@ const demoScores = [
 export default function Index() {
   const [searchQuery, setSearchQuery] = useState("");
   const [demoIndex, setDemoIndex] = useState(1);
+  const [searchResults, setSearchResults] = useState<DeputadoResumo[] | null>(null);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [searched, setSearched] = useState(false);
+
+  const handleSearch = async () => {
+    const q = searchQuery.trim();
+    if (!q) return;
+    setSearchLoading(true);
+    setSearchError(null);
+    setSearched(true);
+    try {
+      const data = await buscarDeputados(q);
+      setSearchResults(data);
+    } catch {
+      setSearchError("Erro ao buscar deputados. Tente novamente.");
+    } finally {
+      setSearchLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
