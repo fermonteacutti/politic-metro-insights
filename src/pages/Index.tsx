@@ -133,23 +133,11 @@ export default function Index() {
             </div>
 
             <div className="flex flex-col items-center gap-6">
-              <ThermometerGauge score={demoScores[demoIndex].score} size="lg" />
+              <ThermometerGauge score={0} size="lg" />
 
-              <div className="flex gap-2">
-                {demoScores.map((item, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setDemoIndex(i)}
-                    className={`px-4 py-2 text-sm rounded-lg font-medium transition-colors ${
-                      i === demoIndex
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-secondary text-secondary-foreground hover:bg-accent"
-                    }`}
-                  >
-                    {item.name}
-                  </button>
-                ))}
-              </div>
+              <p className="text-sm text-muted-foreground">
+                Busque um político para ver seu termômetro
+              </p>
 
               {/* Scale legend */}
               <div className="w-full max-w-md">
