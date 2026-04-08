@@ -46,11 +46,22 @@ export interface Proposicao {
   ementa: string;
 }
 
-async function fetchJson<T>(url: string): Promise<T> {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
-  const json = await res.json();
-  return json.dados as T;
+async function fetchJson<T>(url: string, retries = 2): Promise<T> {
+  let lastError: Error | null = null;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status} ao chamar ${url}`);
+      const json = await res.json();
+      return json.dados as T;
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      if (attempt < retries) {
+        await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
+      }
+    }
+  }
+  throw new Error(`Falha após ${retries + 1} tentativas em ${url}: ${lastError?.message}`);
 }
 
 export async function buscarDeputados(nome: string): Promise<DeputadoResumo[]> {
