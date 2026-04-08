@@ -33,7 +33,7 @@ const features = [
 
 export default function Index() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [demoIndex, setDemoIndex] = useState(1);
+  
   const [searchResults, setSearchResults] = useState<DeputadoResumo[] | null>(null);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
