@@ -1,4 +1,4 @@
-const BASE = "https://dadosabertos.camara.leg.br/api/v2";
+const BASE = "https://politicometro-api.fernando-650.workers.dev/camara";
 
 export interface DeputadoResumo {
   id: number;
