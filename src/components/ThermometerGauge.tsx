@@ -40,9 +40,10 @@ export default function ThermometerGauge({
   const [displayScore, setDisplayScore] = useState(animated ? 0 : score);
   const dim = sizeMap[size];
   const cx = dim / 2;
-  const cy = dim * 0.7;
-  const radius = dim * 0.4;
+  const cy = dim * 0.52;
+  const radius = dim * 0.38;
   const strokeWidth = dim * 0.08;
+  const viewH = cy + dim * 0.08;
 
   useEffect(() => {
     if (!animated) {
@@ -105,7 +106,7 @@ export default function ThermometerGauge({
 
   return (
     <div className="flex flex-col items-center gap-2">
-      <svg width={dim} height={dim * 0.55} viewBox={`0 0 ${dim} ${dim * 0.55}`}>
+      <svg width={dim} height={viewH} viewBox={`0 0 ${dim} ${viewH}`}>
         {/* Gauge segments */}
         {segments}
 
