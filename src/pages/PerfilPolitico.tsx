@@ -166,61 +166,63 @@ export default function PerfilPolitico() {
               <ArrowLeft size={16} /> Voltar
             </Link>
 
-            <div className="flex flex-col md:flex-row gap-6 items-start">
+            <div className="flex flex-col md:flex-row gap-5 items-center md:items-start">
               <img
                 src={status.urlFoto}
                 alt={status.nome}
-                className="w-24 h-24 rounded-2xl object-cover bg-secondary shrink-0"
+                className="w-20 h-20 rounded-xl object-cover bg-secondary shrink-0"
               />
 
-              <div className="flex-1">
-                <h1 className="font-heading text-3xl md:text-4xl font-bold text-primary-foreground mb-2">
+              <div className="flex-1 min-w-0 text-center md:text-left">
+                <h1 className="font-heading text-2xl md:text-3xl font-bold text-primary-foreground mb-1">
                   {status.nomeEleitoral || status.nome}
                 </h1>
-                <div className="flex flex-wrap gap-3 text-primary-foreground/70 text-sm">
+                <div className="flex flex-wrap gap-3 text-primary-foreground/70 text-sm justify-center md:justify-start">
                   <span className="flex items-center gap-1"><Building2 size={14} /> {status.siglaPartido}</span>
                   <span className="flex items-center gap-1"><MapPin size={14} /> {status.siglaUf}</span>
                   <span className="flex items-center gap-1"><Calendar size={14} /> {status.situacao}</span>
                 </div>
-                <p className="mt-2 text-primary-foreground/50 text-xs">
+                <p className="mt-1 text-primary-foreground/50 text-xs">
                   Deputado(a) Federal · {status.condicaoEleitoral}
                 </p>
               </div>
 
-              <div className="shrink-0">
+              <div className="shrink-0 flex flex-col items-center">
                 {termometroLoading ? (
-                  <div className="flex flex-col items-center gap-2 py-4">
-                    <Loader2 size={24} className="animate-spin text-primary-foreground/60" />
-                    <p className="text-primary-foreground/60 text-xs">Calculando termômetro...</p>
+                  <div className="flex items-center gap-2 py-2">
+                    <Loader2 size={18} className="animate-spin text-primary-foreground/60" />
+                    <p className="text-primary-foreground/60 text-xs">Calculando...</p>
                   </div>
                 ) : (
                   <>
-                    <ThermometerGauge score={score} size="md" />
-                    <p className="text-center text-primary-foreground/70 text-sm font-medium mt-1">
+                    <ThermometerGauge score={score} size="sm" />
+                    <p className="text-primary-foreground/70 text-sm font-medium">
                       {getScoreLabel(score)}
                     </p>
-                    {termometro?.resumo ? (
-                      <p className="text-center text-primary-foreground/50 text-xs mt-1 italic max-w-[240px]">
-                        {termometro.resumo}
-                      </p>
-                    ) : (
-                      <p className="text-center text-primary-foreground/40 text-[10px] mt-0.5">
-                        Score em desenvolvimento
-                      </p>
-                    )}
-                    {termometro?.pautas && termometro.pautas.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mt-2 justify-center max-w-[260px]">
-                        {termometro.pautas.map((p, i) => (
-                          <Badge key={i} variant="secondary" className="text-[10px] px-2 py-0.5">
-                            {p}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
                   </>
                 )}
               </div>
             </div>
+
+            {/* Resumo e pautas abaixo do header, em linha */}
+            {!termometroLoading && termometro && (
+              <div className="mt-4 pt-3 border-t border-primary-foreground/10">
+                {termometro.resumo && (
+                  <p className="text-primary-foreground/60 text-xs italic mb-2 max-w-2xl">
+                    {termometro.resumo}
+                  </p>
+                )}
+                {termometro.pautas && termometro.pautas.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {termometro.pautas.map((p, i) => (
+                      <Badge key={i} variant="secondary" className="text-[10px] px-2 py-0.5">
+                        {p}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
