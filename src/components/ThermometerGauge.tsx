@@ -120,14 +120,14 @@ export default function ThermometerGauge({
             y1={cy}
             x2={cx}
             y2={cy - radius * 0.75}
-            stroke="hsl(var(--foreground))"
-            strokeWidth={2.5}
+            stroke="#FBBF24"
+            strokeWidth={3}
             strokeLinecap="round"
           />
         </g>
 
         {/* Center dot */}
-        <circle cx={cx} cy={cy} r={dim * 0.025} fill="hsl(var(--foreground))" />
+        <circle cx={cx} cy={cy} r={dim * 0.03} fill="#FBBF24" />
       </svg>
 
       {showLabels && (
