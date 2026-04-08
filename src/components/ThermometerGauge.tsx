@@ -120,8 +120,8 @@ export default function ThermometerGauge({
             y1={cy}
             x2={cx}
             y2={cy - radius * 0.75}
-            stroke="hsl(var(--foreground))"
-            strokeWidth={2.5}
+            stroke="#FBBF24"
+            strokeWidth={3}
             strokeLinecap="round"
           />
         </g>
