@@ -106,7 +106,7 @@ export default function ThermometerGauge({
 
   return (
     <div className="flex flex-col items-center gap-2">
-      <svg width={dim} height={dim * 0.55} viewBox={`0 0 ${dim} ${dim * 0.55}`}>
+      <svg width={dim} height={viewH} viewBox={`0 0 ${dim} ${viewH}`}>
         {/* Gauge segments */}
         {segments}
 
