@@ -12,7 +12,7 @@ export async function calcularTermometro(
   votacoes: any[],
   proposicoes: any[]
 ): Promise<TermometroResult> {
-  const response = await fetch(WORKER_URL, {
+  const response = await fetch(`${WORKER_URL}/termometro`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ nomePolitico, votacoes, proposicoes }),
