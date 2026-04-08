@@ -1,13 +1,11 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, MapPin, Building2, Calendar, ExternalLink, FileText, Vote, Newspaper, Gavel, DollarSign, Loader2 } from "lucide-react";
+import { ArrowLeft, MapPin, Building2, Calendar, FileText, Vote, User, Loader2 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ThermometerGauge from "@/components/ThermometerGauge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { obterDeputado, obterVotacoes, obterProposicoes, type DeputadoDetalhe, type Votacao, type Proposicao } from "@/lib/camaraApi";
-
-// --- Sub-components ---
+import { obterDeputado, obterEventos, obterProposicoes, type DeputadoDetalhe, type Evento, type Proposicao } from "@/lib/camaraApi";
 
 function DimensionBar({ nome, score, peso }: { nome: string; score: number; peso: number }) {
   const pct = ((score + 100) / 200) * 100;
@@ -38,7 +36,6 @@ function getScoreLabel(score: number) {
   return "Extrema Direita";
 }
 
-// Placeholder dimensions (will be replaced by real algorithm later)
 const placeholderDimensoes = [
   { nome: "Econômica", score: 0, peso: 25 },
   { nome: "Social/Costumes", score: 0, peso: 20 },
@@ -49,12 +46,10 @@ const placeholderDimensoes = [
   { nome: "Saúde/Bem-Estar", score: 0, peso: 5 },
 ];
 
-// --- Main page ---
-
 export default function PerfilPolitico() {
   const { id } = useParams<{ id: string }>();
   const [deputado, setDeputado] = useState<DeputadoDetalhe | null>(null);
-  const [votacoes, setVotacoes] = useState<Votacao[]>([]);
+  const [eventos, setEventos] = useState<Evento[]>([]);
   const [proposicoes, setProposicoes] = useState<Proposicao[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -66,12 +61,12 @@ export default function PerfilPolitico() {
 
     Promise.all([
       obterDeputado(id),
-      obterVotacoes(id).catch(() => [] as Votacao[]),
+      obterEventos(id).catch(() => [] as Evento[]),
       obterProposicoes(id).catch(() => [] as Proposicao[]),
     ])
-      .then(([dep, vot, prop]) => {
+      .then(([dep, evt, prop]) => {
         setDeputado(dep);
-        setVotacoes(vot);
+        setEventos(evt);
         setProposicoes(prop);
       })
       .catch(() => setError("Não foi possível carregar os dados deste deputado."))
@@ -105,7 +100,7 @@ export default function PerfilPolitico() {
   }
 
   const status = deputado.ultimoStatus;
-  const score = 0; // placeholder until algorithm is implemented
+  const score = 0;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -120,7 +115,6 @@ export default function PerfilPolitico() {
             </Link>
 
             <div className="flex flex-col md:flex-row gap-6 items-start">
-              {/* Avatar */}
               <img
                 src={status.urlFoto}
                 alt={status.nome}
@@ -137,11 +131,10 @@ export default function PerfilPolitico() {
                   <span className="flex items-center gap-1"><Calendar size={14} /> {status.situacao}</span>
                 </div>
                 <p className="mt-2 text-primary-foreground/50 text-xs">
-                  Deputado(a) Federal · ID: {id}
+                  Deputado(a) Federal · {status.condicaoEleitoral}
                 </p>
               </div>
 
-              {/* Thermometer */}
               <div className="shrink-0">
                 <ThermometerGauge score={score} size="md" />
                 <p className="text-center text-primary-foreground/70 text-sm font-medium mt-1">
@@ -176,21 +169,43 @@ export default function PerfilPolitico() {
         <section className="pb-16">
           <div className="container">
             <div className="max-w-3xl mx-auto">
-              <Tabs defaultValue="projetos">
-                <TabsList className="w-full grid grid-cols-4 mb-6">
-                  <TabsTrigger value="projetos" className="gap-1.5 text-xs sm:text-sm">
-                    <FileText size={14} className="hidden sm:block" /> Projetos
-                  </TabsTrigger>
+              <Tabs defaultValue="votacoes">
+                <TabsList className="w-full grid grid-cols-3 mb-6">
                   <TabsTrigger value="votacoes" className="gap-1.5 text-xs sm:text-sm">
                     <Vote size={14} className="hidden sm:block" /> Votações
                   </TabsTrigger>
-                  <TabsTrigger value="noticias" className="gap-1.5 text-xs sm:text-sm">
-                    <Newspaper size={14} className="hidden sm:block" /> Notícias
+                  <TabsTrigger value="projetos" className="gap-1.5 text-xs sm:text-sm">
+                    <FileText size={14} className="hidden sm:block" /> Projetos
                   </TabsTrigger>
-                  <TabsTrigger value="financeiro" className="gap-1.5 text-xs sm:text-sm">
-                    <DollarSign size={14} className="hidden sm:block" /> Financeiro
+                  <TabsTrigger value="dados" className="gap-1.5 text-xs sm:text-sm">
+                    <User size={14} className="hidden sm:block" /> Dados Pessoais
                   </TabsTrigger>
                 </TabsList>
+
+                {/* Votações (eventos/sessões) */}
+                <TabsContent value="votacoes">
+                  {eventos.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-8">Nenhuma votação/evento encontrado.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {eventos.map((e) => (
+                        <div key={e.id} className="flex items-center justify-between p-4 rounded-xl border border-border bg-card">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-medium text-sm truncate">{e.descricao || e.descricaoTipo}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              {new Date(e.dataHoraInicio).toLocaleDateString("pt-BR")} · {e.situacao}
+                            </p>
+                          </div>
+                          {e.orgaos?.[0] && (
+                            <span className="text-xs px-2.5 py-1 rounded-full bg-secondary font-medium shrink-0 ml-2">
+                              {e.orgaos[0].sigla}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
 
                 {/* Projetos (proposições) */}
                 <TabsContent value="projetos">
@@ -208,43 +223,25 @@ export default function PerfilPolitico() {
                   )}
                 </TabsContent>
 
-                {/* Votações */}
-                <TabsContent value="votacoes">
-                  {votacoes.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-8">Nenhuma votação encontrada.</p>
-                  ) : (
-                    <div className="space-y-3">
-                      {votacoes.map((v) => (
-                        <div key={v.id} className="flex items-center justify-between p-4 rounded-xl border border-border bg-card">
-                          <div className="min-w-0 flex-1">
-                            <p className="font-medium text-sm truncate">{v.descricao || v.siglaOrgao}</p>
-                            <p className="text-xs text-muted-foreground mt-0.5">
-                              {new Date(v.dataHoraRegistro || v.data).toLocaleDateString("pt-BR")}
-                            </p>
-                          </div>
-                          <span className="text-xs px-2.5 py-1 rounded-full bg-secondary font-medium shrink-0 ml-2">
-                            {v.siglaOrgao}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </TabsContent>
-
-                {/* Notícias */}
-                <TabsContent value="noticias">
-                  <div className="text-center py-12 text-muted-foreground">
-                    <Newspaper size={32} className="mx-auto mb-3 opacity-40" />
-                    <p className="text-sm">Notícias serão integradas em breve.</p>
-                  </div>
-                </TabsContent>
-
-                {/* Financeiro */}
-                <TabsContent value="financeiro">
-                  <div className="text-center py-12 text-muted-foreground">
-                    <DollarSign size={32} className="mx-auto mb-3 opacity-40" />
-                    <p className="text-sm">Dados financeiros serão disponibilizados em breve.</p>
-                    <p className="text-xs mt-1">Fonte: Portal da Transparência e TSE</p>
+                {/* Dados Pessoais */}
+                <TabsContent value="dados">
+                  <div className="bg-card rounded-2xl border border-border p-6 space-y-4">
+                    <InfoRow label="Nome Civil" value={deputado.nomeCivil} />
+                    <InfoRow label="Nome Eleitoral" value={status.nomeEleitoral} />
+                    <InfoRow label="Partido" value={status.siglaPartido} />
+                    <InfoRow label="Estado" value={status.siglaUf} />
+                    <InfoRow label="Situação" value={status.situacao} />
+                    <InfoRow label="Condição Eleitoral" value={status.condicaoEleitoral} />
+                    <InfoRow label="Escolaridade" value={deputado.escolaridade} />
+                    <InfoRow label="Data de Nascimento" value={deputado.dataNascimento ? new Date(deputado.dataNascimento).toLocaleDateString("pt-BR") : "—"} />
+                    <InfoRow label="Município de Nascimento" value={`${deputado.municipioNascimento || "—"} / ${deputado.ufNascimento || "—"}`} />
+                    {status.gabinete && (
+                      <>
+                        <InfoRow label="Telefone" value={status.gabinete.telefone} />
+                        <InfoRow label="E-mail" value={status.gabinete.email} />
+                        <InfoRow label="Gabinete" value={`Sala ${status.gabinete.sala}, Andar ${status.gabinete.andar}`} />
+                      </>
+                    )}
                   </div>
                 </TabsContent>
               </Tabs>
@@ -254,6 +251,15 @@ export default function PerfilPolitico() {
       </main>
 
       <Footer />
+    </div>
+  );
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 py-1 border-b border-border last:border-0">
+      <span className="text-sm text-muted-foreground">{label}</span>
+      <span className="text-sm font-medium">{value || "—"}</span>
     </div>
   );
 }

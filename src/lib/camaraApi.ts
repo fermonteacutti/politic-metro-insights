@@ -28,14 +28,13 @@ export interface DeputadoDetalhe {
   escolaridade: string;
 }
 
-export interface Votacao {
-  id: string;
-  uri: string;
-  data: string;
-  dataHoraRegistro: string;
-  siglaOrgao: string;
+export interface Evento {
+  id: number;
+  dataHoraInicio: string;
+  situacao: string;
+  descricaoTipo: string;
   descricao: string;
-  aprovacao: number;
+  orgaos: { sigla: string; nome: string }[];
 }
 
 export interface Proposicao {
@@ -64,14 +63,14 @@ export async function obterDeputado(id: string): Promise<DeputadoDetalhe> {
   return fetchJson<DeputadoDetalhe>(`${BASE}/deputados/${id}`);
 }
 
-export async function obterVotacoes(id: string): Promise<Votacao[]> {
-  return fetchJson<Votacao[]>(
-    `${BASE}/deputados/${id}/votacoes?ordem=DESC&ordenarPor=dataHoraRegistro&itens=15`
+export async function obterEventos(id: string): Promise<Evento[]> {
+  return fetchJson<Evento[]>(
+    `${BASE}/deputados/${id}/eventos?itens=20&ordem=DESC&ordenarPor=dataHoraInicio`
   );
 }
 
 export async function obterProposicoes(id: string): Promise<Proposicao[]> {
   return fetchJson<Proposicao[]>(
-    `${BASE}/deputados/${id}/proposicoes?ordem=DESC&ordenarPor=ano&itens=15`
+    `${BASE}/proposicoes?idDeputadoAutor=${id}&ordem=DESC&ordenarPor=ano&itens=10`
   );
 }
