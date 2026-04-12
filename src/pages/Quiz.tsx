@@ -249,7 +249,7 @@ export default function Quiz() {
                     <Share2 size={16} /> Compartilhar
                   </button>
                   <button
-                    onClick={() => navigate("/")}
+                    onClick={handleVerPoliticos}
                     className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-border bg-card text-sm font-medium hover:bg-accent transition-colors"
                   >
                     <Search size={16} /> Ver políticos similares
