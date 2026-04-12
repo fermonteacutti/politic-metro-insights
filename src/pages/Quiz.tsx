@@ -79,7 +79,7 @@ export default function Quiz() {
                   Descubra seu Termômetro Político
                 </h1>
                 <p className="text-muted-foreground text-lg mb-3">
-                  Responda {totalPerguntas} perguntas baseadas nas mesmas 7 dimensões que usamos
+                  Responda 31 perguntas baseadas nas mesmas 7 dimensões que usamos
                   para avaliar políticos e veja onde você se posiciona no espectro.
                 </p>
                 <p className="text-muted-foreground text-sm mb-8">
