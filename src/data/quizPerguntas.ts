@@ -30,12 +30,13 @@ export const perguntas: Pergunta[] = [
   { id: 22, dimensao: "educacao", texto: "A educação pública gratuita e de qualidade deve ser prioridade máxima do governo.", direcao: "esquerda" },
   { id: 23, dimensao: "educacao", texto: "Ideologia e política não devem ser discutidas em sala de aula.", direcao: "direita" },
   { id: 24, dimensao: "democracia", texto: "As Forças Armadas devem ter papel de garantidoras da ordem constitucional.", direcao: "direita" },
-  { id: 25, dimensao: "democracia", texto: "A liberdade de imprensa e a independência do judiciário são pilares inegociáveis.", direcao: "esquerda" },
+  { id: 25, dimensao: "democracia", texto: "A liberdade de imprensa, mesmo crítica ao governo, deve ser sempre protegida.", direcao: "esquerda" },
   { id: 26, dimensao: "democracia", texto: "Governos fortes e centralizados são mais eficientes que sistemas com muitos contrapesos.", direcao: "direita" },
   { id: 27, dimensao: "democracia", texto: "A transparência total dos gastos públicos e combate à corrupção devem ser prioridade.", direcao: "esquerda" },
   { id: 28, dimensao: "saude", texto: "O SUS deve ser fortalecido e ser o principal sistema de saúde do Brasil.", direcao: "esquerda" },
   { id: 29, dimensao: "saude", texto: "Planos de saúde privados devem ter mais incentivos fiscais para reduzir pressão sobre o SUS.", direcao: "direita" },
   { id: 30, dimensao: "saude", texto: "O governo deve garantir acesso universal e gratuito a medicamentos essenciais.", direcao: "esquerda" },
+  { id: 31, dimensao: "democracia", texto: "O Supremo Tribunal Federal não deve interferir em decisões do Executivo e do Legislativo.", direcao: "direita" },
 ];
 
 export const pesos: Record<string, number> = {
