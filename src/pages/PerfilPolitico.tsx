@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, MapPin, Building2, Calendar, FileText, Vote, User, Loader2 } from "lucide-react";
+import { ArrowLeft, MapPin, Building2, Calendar, FileText, Vote, User, Loader2, AlertTriangle } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ThermometerGauge from "@/components/ThermometerGauge";
@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { obterDeputado, obterEventos, obterProposicoes, type DeputadoDetalhe, type Evento, type Proposicao } from "@/lib/camaraApi";
 import { calcularTermometro, getCachedResult, setCachedResult, type TermometroResult } from "@/services/termometroService";
+import { politicosConhecidos } from "@/data/politicosConhecidos";
 
 const DIMENSAO_META: Record<string, { nome: string; peso: number }> = {
   economica: { nome: "Econômica", peso: 25 },
@@ -50,8 +51,343 @@ function getScoreLabel(score: number) {
   return "Extrema Direita";
 }
 
+// Local politician profile component
+function PerfilLocal({ localId }: { localId: string }) {
+  const politico = politicosConhecidos.find((p) => p.id === localId);
+  const [termometro, setTermometro] = useState<TermometroResult | null>(null);
+  const [termometroLoading, setTermometroLoading] = useState(false);
+
+  useEffect(() => {
+    if (!politico) return;
+
+    const cached = getCachedResult(`local-${localId}`);
+    if (cached) {
+      setTermometro(cached);
+      return;
+    }
+
+    setTermometroLoading(true);
+    calcularTermometro(politico.nome, [], [])
+      .then((result) => {
+        setTermometro(result);
+        setCachedResult(`local-${localId}`, result);
+      })
+      .catch((err) => console.error("[PerfilLocal] Erro termômetro:", err))
+      .finally(() => setTermometroLoading(false));
+  }, [localId, politico]);
+
+  if (!politico) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 flex flex-col items-center justify-center text-center px-4">
+          <p className="text-destructive font-medium mb-2">Político não encontrado.</p>
+          <Link to="/" className="text-sm text-primary hover:underline">← Voltar à busca</Link>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  const score = termometro?.score ?? 0;
+  const dimensoes = termometro
+    ? Object.entries(DIMENSAO_META).map(([key, meta]) => ({
+        nome: meta.nome,
+        score: termometro.dimensoes[key] ?? 0,
+        peso: meta.peso,
+      }))
+    : Object.entries(DIMENSAO_META).map(([, meta]) => ({
+        nome: meta.nome,
+        score: 0,
+        peso: meta.peso,
+      }));
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      <Header />
+      <main className="flex-1">
+        <div className="bg-hero py-6">
+          <div className="container">
+            <Link to="/" className="inline-flex items-center gap-1.5 text-primary-foreground/70 hover:text-primary-foreground text-sm mb-6">
+              <ArrowLeft size={16} /> Voltar
+            </Link>
+
+            <div className="flex flex-col md:flex-row gap-5 items-center md:items-start">
+              {politico.urlFoto ? (
+                <img src={politico.urlFoto} alt={politico.nome} className="w-20 h-20 rounded-xl object-cover bg-secondary shrink-0" />
+              ) : (
+                <div className="w-20 h-20 rounded-xl bg-secondary shrink-0 flex items-center justify-center text-2xl font-bold text-muted-foreground">
+                  {politico.nome.charAt(0)}
+                </div>
+              )}
+
+              <div className="flex-1 min-w-0 text-center md:text-left">
+                <h1 className="font-heading text-2xl md:text-3xl font-bold text-primary-foreground mb-1">
+                  {politico.nome}
+                </h1>
+                <div className="flex flex-wrap gap-3 text-primary-foreground/70 text-sm justify-center md:justify-start">
+                  <span className="flex items-center gap-1"><Building2 size={14} /> {politico.partido}</span>
+                  <span className="flex items-center gap-1"><MapPin size={14} /> {politico.estado}</span>
+                </div>
+                <p className="mt-1 text-primary-foreground/50 text-xs">{politico.cargo}</p>
+              </div>
+
+              <div className="shrink-0 flex flex-col items-center">
+                {termometroLoading ? (
+                  <div className="flex items-center gap-2 py-2">
+                    <Loader2 size={18} className="animate-spin text-primary-foreground/60" />
+                    <p className="text-primary-foreground/60 text-xs">Calculando...</p>
+                  </div>
+                ) : (
+                  <>
+                    <ThermometerGauge score={score} size="sm" />
+                    <p className="text-primary-foreground/70 text-sm font-medium">
+                      {getScoreLabel(score)}
+                    </p>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {!termometroLoading && termometro && (
+              <div className="mt-4 pt-3 border-t border-primary-foreground/10">
+                {termometro.resumo && (
+                  <p className="text-primary-foreground/60 text-xs italic mb-2 max-w-2xl">
+                    {termometro.resumo}
+                  </p>
+                )}
+                {termometro.pautas && termometro.pautas.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {termometro.pautas.map((p, i) => (
+                      <Badge key={i} variant="secondary" className="text-[10px] px-2 py-0.5">
+                        {p}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Warning */}
+        <section className="py-4">
+          <div className="container">
+            <div className="max-w-3xl mx-auto">
+              <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 text-xs">
+                <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+                <span>Dados baseados em histórico público e declarações — sem votações parlamentares registradas.</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Dimensions */}
+        <section className="py-8">
+          <div className="container">
+            <div className="max-w-3xl mx-auto">
+              <h2 className="font-heading text-xl font-bold mb-4">Análise por Dimensão</h2>
+              <div className="space-y-4 bg-card rounded-2xl border border-border p-6">
+                {dimensoes.map((d) => (
+                  <DimensionBar key={d.nome} nome={d.nome} score={d.score} peso={d.peso} />
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+      <Footer />
+    </div>
+  );
+}
+
+// Main component: routes based on source type
 export default function PerfilPolitico() {
-  const { id } = useParams<{ id: string }>();
+  const { id, source } = useParams<{ id: string; source?: string }>();
+
+  // Local politician
+  if (source === "local") {
+    return <PerfilLocal localId={id!} />;
+  }
+
+  // Senado politician — simplified view with termometer only
+  if (source === "senado") {
+    return <PerfilSenado senadoId={id!} />;
+  }
+
+  // Default: Câmara deputy
+  return <PerfilDeputado id={id!} />;
+}
+
+function PerfilSenado({ senadoId }: { senadoId: string }) {
+  const [termometro, setTermometro] = useState<TermometroResult | null>(null);
+  const [termometroLoading, setTermometroLoading] = useState(true);
+  const [senadorNome, setSenadorNome] = useState("");
+  const [senadorData, setSenadorData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const BASE = "https://politicometro-api.fernando-650.workers.dev/camara";
+    fetch(`${BASE}/senadores/lista/atual?campos=IdentificacaoParlamentar`)
+      .then((r) => r.json())
+      .then((json) => {
+        const lista =
+          json?.dados?.ListaParlamentarEmExercicio?.Parlamentares?.Parlamentar ||
+          json?.ListaParlamentarEmExercicio?.Parlamentares?.Parlamentar ||
+          [];
+        const arr = Array.isArray(lista) ? lista : [lista];
+        const found = arr.find(
+          (s: any) => String(s?.IdentificacaoParlamentar?.CodigoParlamentar) === senadoId
+        );
+        if (found) {
+          const ip = found.IdentificacaoParlamentar;
+          setSenadorNome(ip.NomeParlamentar || ip.NomeCompletoParlamentar);
+          setSenadorData(ip);
+        }
+      })
+      .catch((err) => console.error("[PerfilSenado] Erro:", err))
+      .finally(() => setLoading(false));
+  }, [senadoId]);
+
+  useEffect(() => {
+    if (!senadorNome) return;
+    const cached = getCachedResult(`senado-${senadoId}`);
+    if (cached) {
+      setTermometro(cached);
+      setTermometroLoading(false);
+      return;
+    }
+    calcularTermometro(senadorNome, [], [])
+      .then((result) => {
+        setTermometro(result);
+        setCachedResult(`senado-${senadoId}`, result);
+      })
+      .catch((err) => console.error("[PerfilSenado] Erro termômetro:", err))
+      .finally(() => setTermometroLoading(false));
+  }, [senadorNome, senadoId]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 flex items-center justify-center text-muted-foreground gap-2">
+          <Loader2 size={20} className="animate-spin" />
+          <span className="text-sm">Carregando perfil...</span>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  const score = termometro?.score ?? 0;
+  const dimensoes = termometro
+    ? Object.entries(DIMENSAO_META).map(([key, meta]) => ({
+        nome: meta.nome,
+        score: termometro.dimensoes[key] ?? 0,
+        peso: meta.peso,
+      }))
+    : Object.entries(DIMENSAO_META).map(([, meta]) => ({
+        nome: meta.nome,
+        score: 0,
+        peso: meta.peso,
+      }));
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      <Header />
+      <main className="flex-1">
+        <div className="bg-hero py-6">
+          <div className="container">
+            <Link to="/" className="inline-flex items-center gap-1.5 text-primary-foreground/70 hover:text-primary-foreground text-sm mb-6">
+              <ArrowLeft size={16} /> Voltar
+            </Link>
+
+            <div className="flex flex-col md:flex-row gap-5 items-center md:items-start">
+              {senadorData?.UrlFotoParlamentar ? (
+                <img src={senadorData.UrlFotoParlamentar} alt={senadorNome} className="w-20 h-20 rounded-xl object-cover bg-secondary shrink-0" />
+              ) : (
+                <div className="w-20 h-20 rounded-xl bg-secondary shrink-0 flex items-center justify-center text-2xl font-bold text-muted-foreground">
+                  {senadorNome.charAt(0)}
+                </div>
+              )}
+
+              <div className="flex-1 min-w-0 text-center md:text-left">
+                <h1 className="font-heading text-2xl md:text-3xl font-bold text-primary-foreground mb-1">
+                  {senadorNome}
+                </h1>
+                <div className="flex flex-wrap gap-3 text-primary-foreground/70 text-sm justify-center md:justify-start">
+                  {senadorData?.SiglaPartidoParlamentar && (
+                    <span className="flex items-center gap-1"><Building2 size={14} /> {senadorData.SiglaPartidoParlamentar}</span>
+                  )}
+                  {senadorData?.UfParlamentar && (
+                    <span className="flex items-center gap-1"><MapPin size={14} /> {senadorData.UfParlamentar}</span>
+                  )}
+                </div>
+                <p className="mt-1 text-primary-foreground/50 text-xs">Senador(a)</p>
+              </div>
+
+              <div className="shrink-0 flex flex-col items-center">
+                {termometroLoading ? (
+                  <div className="flex items-center gap-2 py-2">
+                    <Loader2 size={18} className="animate-spin text-primary-foreground/60" />
+                    <p className="text-primary-foreground/60 text-xs">Calculando...</p>
+                  </div>
+                ) : (
+                  <>
+                    <ThermometerGauge score={score} size="sm" />
+                    <p className="text-primary-foreground/70 text-sm font-medium">{getScoreLabel(score)}</p>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {!termometroLoading && termometro && (
+              <div className="mt-4 pt-3 border-t border-primary-foreground/10">
+                {termometro.resumo && (
+                  <p className="text-primary-foreground/60 text-xs italic mb-2 max-w-2xl">{termometro.resumo}</p>
+                )}
+                {termometro.pautas && termometro.pautas.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {termometro.pautas.map((p, i) => (
+                      <Badge key={i} variant="secondary" className="text-[10px] px-2 py-0.5">{p}</Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <section className="py-4">
+          <div className="container">
+            <div className="max-w-3xl mx-auto">
+              <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 text-xs">
+                <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+                <span>Dados baseados em histórico público e declarações — sem votações parlamentares registradas no Senado.</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="py-8">
+          <div className="container">
+            <div className="max-w-3xl mx-auto">
+              <h2 className="font-heading text-xl font-bold mb-4">Análise por Dimensão</h2>
+              <div className="space-y-4 bg-card rounded-2xl border border-border p-6">
+                {dimensoes.map((d) => (
+                  <DimensionBar key={d.nome} nome={d.nome} score={d.score} peso={d.peso} />
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+      <Footer />
+    </div>
+  );
+}
+
+function PerfilDeputado({ id }: { id: string }) {
   const [deputado, setDeputado] = useState<DeputadoDetalhe | null>(null);
   const [eventos, setEventos] = useState<Evento[]>([]);
   const [proposicoes, setProposicoes] = useState<Proposicao[]>([]);
@@ -61,10 +397,8 @@ export default function PerfilPolitico() {
   const [termometro, setTermometro] = useState<TermometroResult | null>(null);
   const [termometroLoading, setTermometroLoading] = useState(false);
 
-  // Load deputy data
   useEffect(() => {
     if (!id) return;
-    console.log("[PerfilPolitico] ID recebido da rota:", id);
     setLoading(true);
     setError(null);
 
@@ -74,19 +408,16 @@ export default function PerfilPolitico() {
       obterProposicoes(id).catch(() => [] as Proposicao[]),
     ])
       .then(([dep, evt, prop]) => {
-        console.log("[PerfilPolitico] Deputado carregado:", dep?.ultimoStatus?.nome);
         setDeputado(dep);
         setEventos(evt);
         setProposicoes(prop);
       })
       .catch((err) => {
-        console.error("[PerfilPolitico] Erro ao carregar:", err);
         setError(`Erro ao carregar deputado (ID: ${id}): ${err.message}`);
       })
       .finally(() => setLoading(false));
   }, [id]);
 
-  // Calculate thermometer after data loads
   useEffect(() => {
     if (!id || !deputado || loading) return;
 
@@ -98,11 +429,9 @@ export default function PerfilPolitico() {
 
     setTermometroLoading(true);
     const nome = deputado.ultimoStatus.nomeEleitoral || deputado.ultimoStatus.nome;
-    console.log("[PerfilPolitico] Iniciando cálculo do termômetro para:", nome, "| Votações:", eventos.length, "| Proposições:", proposicoes.length);
 
     calcularTermometro(nome, eventos, proposicoes)
       .then((result) => {
-        console.log("[PerfilPolitico] Termômetro calculado com sucesso:", result);
         setTermometro(result);
         setCachedResult(id, result);
       })
@@ -140,7 +469,6 @@ export default function PerfilPolitico() {
 
   const status = deputado.ultimoStatus;
   const score = termometro?.score ?? 0;
-  console.log("[PerfilPolitico] Score para gauge:", score, "| Termômetro:", termometro);
 
   const dimensoes = termometro
     ? Object.entries(DIMENSAO_META).map(([key, meta]) => ({
@@ -159,7 +487,6 @@ export default function PerfilPolitico() {
       <Header />
 
       <main className="flex-1">
-        {/* Top bar */}
         <div className="bg-hero py-6">
           <div className="container">
             <Link to="/" className="inline-flex items-center gap-1.5 text-primary-foreground/70 hover:text-primary-foreground text-sm mb-6">
@@ -204,7 +531,6 @@ export default function PerfilPolitico() {
               </div>
             </div>
 
-            {/* Resumo e pautas abaixo do header, em linha */}
             {!termometroLoading && termometro && (
               <div className="mt-4 pt-3 border-t border-primary-foreground/10">
                 {termometro.resumo && (
