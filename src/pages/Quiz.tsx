@@ -51,14 +51,34 @@ export default function Quiz() {
     const label = classificarScore(resultado.score);
     const text = `Fiz o Quiz do Politicômetro e meu resultado foi: ${label} (score ${resultado.score > 0 ? "+" : ""}${resultado.score}). Descubra o seu em politicometro.com.br`;
     navigator.clipboard.writeText(text).then(() => {
-      toast.success("Copiado para a área de transferência!");
+      toast.success("✓ Copiado para a área de transferência!", { duration: 3000 });
+    }).catch(() => {
+      // Fallback for environments where clipboard API is blocked
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+      toast.success("✓ Copiado para a área de transferência!", { duration: 3000 });
     });
   };
 
   const reset = () => {
-    setStep("intro");
     setCurrent(0);
     setRespostas({});
+    setStep("intro");
+  };
+
+  const handleVerPoliticos = () => {
+    navigate("/");
+    setTimeout(() => {
+      const searchInput = document.querySelector<HTMLInputElement>('input[type="text"], input[type="search"]');
+      if (searchInput) {
+        searchInput.scrollIntoView({ behavior: "smooth", block: "center" });
+        setTimeout(() => searchInput.focus(), 500);
+      }
+    }, 300);
   };
 
   return (
