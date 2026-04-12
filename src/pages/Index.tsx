@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Search, ArrowRight, Users, Scale, Brain, Shield } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -6,7 +6,7 @@ import ThermometerGauge from "@/components/ThermometerGauge";
 import LeiDoDiaCard from "@/components/LeiDoDiaCard";
 import SearchResults from "@/components/SearchResults";
 import { Link } from "react-router-dom";
-import { buscarDeputados, type DeputadoResumo } from "@/lib/camaraApi";
+import { buscarUnificado, type ResultadoBusca } from "@/lib/searchService";
 
 const features = [
   {
@@ -33,27 +33,67 @@ const features = [
 
 export default function Index() {
   const [searchQuery, setSearchQuery] = useState("");
-  
-  const [searchResults, setSearchResults] = useState<DeputadoResumo[] | null>(null);
+  const [searchResults, setSearchResults] = useState<ResultadoBusca[] | null>(null);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
 
-  const handleSearch = async () => {
-    const q = searchQuery.trim();
+  // Autocomplete suggestions
+  const [suggestions, setSuggestions] = useState<ResultadoBusca[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleSearch = async (query?: string) => {
+    const q = (query ?? searchQuery).trim();
     if (!q) return;
+    setShowSuggestions(false);
+    setSuggestions([]);
     setSearchLoading(true);
     setSearchError(null);
     setSearched(true);
     try {
-      const data = await buscarDeputados(q);
+      const data = await buscarUnificado(q);
       setSearchResults(data);
     } catch {
-      setSearchError("Erro ao buscar deputados. Tente novamente.");
+      setSearchError("Erro ao buscar políticos. Tente novamente.");
     } finally {
       setSearchLoading(false);
     }
   };
+
+  // Debounced autocomplete
+  const handleInputChange = useCallback((value: string) => {
+    setSearchQuery(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    if (value.trim().length < 2) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const results = await buscarUnificado(value.trim());
+        setSuggestions(results.slice(0, 6));
+        setShowSuggestions(true);
+      } catch {
+        setSuggestions([]);
+      }
+    }, 300);
+  }, []);
+
+  // Close suggestions on click outside
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (inputRef.current && !inputRef.current.closest(".search-container")?.contains(e.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -61,7 +101,6 @@ export default function Index() {
 
       {/* Hero Section */}
       <section className="relative bg-hero py-20 md:py-28 overflow-hidden">
-        {/* Background decoration */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-10 left-10 w-72 h-72 bg-thermo-center rounded-full blur-3xl" />
           <div className="absolute bottom-10 right-10 w-96 h-96 bg-thermo-right rounded-full blur-3xl" />
@@ -78,30 +117,64 @@ export default function Index() {
             </p>
 
             {/* Search Bar */}
-            <div className="relative max-w-xl mx-auto animate-fade-up animation-delay-400">
+            <div className="relative max-w-xl mx-auto animate-fade-up animation-delay-400 search-container">
               <div className="flex items-center bg-card rounded-2xl shadow-2xl p-1.5">
                 <div className="flex items-center flex-1 px-4 gap-3">
                   <Search size={20} className="text-muted-foreground shrink-0" />
-                   <input
+                  <input
+                    ref={inputRef}
                     type="text"
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                    onChange={(e) => handleInputChange(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleSearch();
+                    }}
+                    onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
                     placeholder="Digite o nome de um político..."
                     className="w-full py-3 bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none text-base"
                   />
                 </div>
                 <button
-                  onClick={handleSearch}
+                  onClick={() => handleSearch()}
                   className="shrink-0 px-6 py-3 bg-primary text-primary-foreground font-semibold rounded-xl hover:opacity-90 transition-opacity"
                 >
                   Buscar
                 </button>
               </div>
+
+              {/* Autocomplete Suggestions */}
+              {showSuggestions && suggestions.length > 0 && (
+                <div className="absolute left-0 right-0 top-full mt-1 bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden">
+                  {suggestions.map((s) => (
+                    <button
+                      key={s.id}
+                      onClick={() => {
+                        setSearchQuery(s.nome);
+                        setShowSuggestions(false);
+                        handleSearch(s.nome);
+                      }}
+                      className="w-full text-left px-4 py-2.5 hover:bg-accent transition-colors flex items-center gap-3"
+                    >
+                      {s.urlFoto ? (
+                        <img src={s.urlFoto} alt="" className="w-8 h-8 rounded-lg object-cover bg-secondary shrink-0" />
+                      ) : (
+                        <div className="w-8 h-8 rounded-lg bg-secondary shrink-0 flex items-center justify-center text-xs font-bold text-muted-foreground">
+                          {s.nome.charAt(0)}
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">{s.nome}</p>
+                        <p className="text-xs text-muted-foreground">{s.partido} · {s.estado}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+
               <p className="text-primary-foreground/50 text-xs mt-3">
                 Ex: Lula, Bolsonaro, Marina Silva, Simone Tebet...
               </p>
-           </div>
+            </div>
           </div>
         </div>
       </section>
@@ -134,12 +207,9 @@ export default function Index() {
 
             <div className="flex flex-col items-center gap-6">
               <ThermometerGauge score={0} size="lg" />
-
               <p className="text-sm text-muted-foreground">
                 Busque um político para ver seu termômetro
               </p>
-
-              {/* Scale legend */}
               <div className="w-full max-w-md">
                 <div className="h-3 rounded-full thermometer-gradient" />
                 <div className="flex justify-between mt-1.5 text-xs text-muted-foreground">
@@ -199,7 +269,7 @@ export default function Index() {
             <div className="relative z-10">
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary-foreground/10 text-primary-foreground/80 text-sm font-medium mb-4">
                 <Brain size={16} />
-                30 perguntas · 5 minutos
+                31 perguntas · 5 minutos
               </div>
               <h2 className="font-heading text-3xl md:text-4xl font-bold text-primary-foreground mb-3">
                 Descubra seu Termômetro Político
