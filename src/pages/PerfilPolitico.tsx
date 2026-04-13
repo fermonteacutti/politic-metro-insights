@@ -51,6 +51,18 @@ function getScoreLabel(score: number) {
   return "Extrema Direita";
 }
 
+function PerfilPhoto({ url, nome }: { url?: string; nome: string }) {
+  const [errored, setErrored] = useState(false);
+  if (url && !errored) {
+    return <img src={url} alt={nome} className="w-20 h-20 rounded-xl object-cover bg-secondary shrink-0" onError={() => setErrored(true)} />;
+  }
+  return (
+    <div className="w-20 h-20 rounded-xl bg-secondary shrink-0 flex items-center justify-center text-2xl font-bold text-muted-foreground">
+      {nome.charAt(0)}
+    </div>
+  );
+}
+
 // Local politician profile component
 function PerfilLocal({ localId }: { localId: string }) {
   const politico = politicosConhecidos.find((p) => p.id === localId);
@@ -113,13 +125,7 @@ function PerfilLocal({ localId }: { localId: string }) {
             </Link>
 
             <div className="flex flex-col md:flex-row gap-5 items-center md:items-start">
-              {politico.urlFoto ? (
-                <img src={politico.urlFoto} alt={politico.nome} className="w-20 h-20 rounded-xl object-cover bg-secondary shrink-0" />
-              ) : (
-                <div className="w-20 h-20 rounded-xl bg-secondary shrink-0 flex items-center justify-center text-2xl font-bold text-muted-foreground">
-                  {politico.nome.charAt(0)}
-                </div>
-              )}
+              <PerfilPhoto url={politico.urlFoto} nome={politico.nome} />
 
               <div className="flex-1 min-w-0 text-center md:text-left">
                 <h1 className="font-heading text-2xl md:text-3xl font-bold text-primary-foreground mb-1">

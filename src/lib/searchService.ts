@@ -119,7 +119,15 @@ function deduplicar(resultados: ResultadoBusca[]): ResultadoBusca[] {
   const seen = new Map<string, ResultadoBusca>();
   for (const r of resultados) {
     const key = normalize(r.nome);
-    if (!seen.has(key)) {
+    // Check if any existing key contains this name or vice versa
+    let found = false;
+    for (const [existingKey] of seen) {
+      if (existingKey.includes(key) || key.includes(existingKey)) {
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
       seen.set(key, r);
     }
   }

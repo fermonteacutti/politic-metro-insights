@@ -31,6 +31,18 @@ const features = [
   },
 ];
 
+function SuggestionPhoto({ url, nome }: { url?: string; nome: string }) {
+  const [errored, setErrored] = useState(false);
+  if (url && !errored) {
+    return <img src={url} alt="" className="w-8 h-8 rounded-lg object-cover bg-secondary shrink-0" onError={() => setErrored(true)} />;
+  }
+  return (
+    <div className="w-8 h-8 rounded-lg bg-secondary shrink-0 flex items-center justify-center text-xs font-bold text-muted-foreground">
+      {nome.charAt(0)}
+    </div>
+  );
+}
+
 export default function Index() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<ResultadoBusca[] | null>(null);
@@ -155,13 +167,7 @@ export default function Index() {
                       }}
                       className="w-full text-left px-4 py-2.5 hover:bg-accent transition-colors flex items-center gap-3"
                     >
-                      {s.urlFoto ? (
-                        <img src={s.urlFoto} alt="" className="w-8 h-8 rounded-lg object-cover bg-secondary shrink-0" />
-                      ) : (
-                        <div className="w-8 h-8 rounded-lg bg-secondary shrink-0 flex items-center justify-center text-xs font-bold text-muted-foreground">
-                          {s.nome.charAt(0)}
-                        </div>
-                      )}
+                      <SuggestionPhoto url={s.urlFoto} nome={s.nome} />
                       <div className="min-w-0">
                         <p className="text-sm font-medium truncate">{s.nome}</p>
                         <p className="text-xs text-muted-foreground">{s.partido} · {s.estado}</p>
