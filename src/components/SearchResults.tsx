@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { MapPin, Building2, Loader2, SearchX } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +21,26 @@ function buildLink(r: ResultadoBusca): string {
   if (r.fonte === "local") return `/politico/local/${r.id.replace("local-", "")}`;
   if (r.fonte === "senado") return `/politico/senado/${r.id.replace("senado-", "")}`;
   return `/politico/${r.id}`;
+}
+
+function FotoComFallback({ url, nome, size = "w-16 h-16", textSize = "text-xl" }: { url?: string; nome: string; size?: string; textSize?: string }) {
+  const [errored, setErrored] = useState(false);
+  if (url && !errored) {
+    return (
+      <img
+        src={url}
+        alt={nome}
+        className={`${size} rounded-xl object-cover bg-secondary shrink-0`}
+        loading="lazy"
+        onError={() => setErrored(true)}
+      />
+    );
+  }
+  return (
+    <div className={`${size} rounded-xl bg-secondary shrink-0 flex items-center justify-center text-muted-foreground ${textSize} font-bold`}>
+      {nome.charAt(0)}
+    </div>
+  );
 }
 
 export default function SearchResults({ results, loading, error, searched }: Props) {
@@ -62,18 +83,7 @@ export default function SearchResults({ results, loading, error, searched }: Pro
             to={buildLink(r)}
             className="flex items-center gap-4 p-4 rounded-2xl border border-border bg-card hover:shadow-lg hover:-translate-y-0.5 transition-all"
           >
-            {r.urlFoto ? (
-              <img
-                src={r.urlFoto}
-                alt={r.nome}
-                className="w-16 h-16 rounded-xl object-cover bg-secondary shrink-0"
-                loading="lazy"
-              />
-            ) : (
-              <div className="w-16 h-16 rounded-xl bg-secondary shrink-0 flex items-center justify-center text-muted-foreground text-xl font-bold">
-                {r.nome.charAt(0)}
-              </div>
-            )}
+            <FotoComFallback url={r.urlFoto} nome={r.nome} size="w-16 h-16" textSize="text-xl" />
             <div className="min-w-0 flex-1">
               <p className="font-heading font-bold text-sm truncate">{r.nome}</p>
               {r.cargo && (
