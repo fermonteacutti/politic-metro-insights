@@ -353,12 +353,14 @@ function PerfilSenado({ senadoId }: { senadoId: string }) {
 
 // ==================== WEB SEARCH POLITICIAN ====================
 function PerfilWeb({ webId }: { webId: string }) {
+  const [searchParams] = useSearchParams();
   const [termometro, setTermometro] = useState<TermometroResult | null>(null);
   const [termometroLoading, setTermometroLoading] = useState(true);
 
-  // Extract name from the ID (web-nome-normalizado-index)
-  const nomeParts = decodeURIComponent(webId).replace(/^web-/, "").replace(/-\d+$/, "").split("-");
-  const nomeDisplay = nomeParts.map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+  const nomeDisplay = searchParams.get("nome") || decodeURIComponent(webId).replace(/^web-/, "").replace(/-/g, " ");
+  const partido = searchParams.get("partido") || "—";
+  const estado = searchParams.get("estado") || "—";
+  const cargo = searchParams.get("cargo") || "Político(a)";
 
   useEffect(() => {
     if (!nomeDisplay) return;
