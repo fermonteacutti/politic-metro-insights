@@ -379,9 +379,9 @@ function PerfilWeb({ webId }: { webId: string }) {
       <main className="flex-1">
         <PerfilHeader
           nome={nomeDisplay}
-          partido="—"
-          estado="—"
-          cargo="Político (via pesquisa web)"
+          partido={partido}
+          estado={estado}
+          cargo={cargo}
           termometro={termometro}
           termometroLoading={termometroLoading}
           badges={
@@ -438,6 +438,9 @@ function PerfilWeb({ webId }: { webId: string }) {
                 <TabsContent value="dados">
                   <div className="bg-card rounded-2xl border border-border p-6 space-y-4">
                     <InfoRow label="Nome" value={nomeDisplay} />
+                    <InfoRow label="Cargo" value={cargo} />
+                    <InfoRow label="Partido" value={partido} />
+                    <InfoRow label="Estado" value={estado} />
                     <InfoRow label="Fonte" value="Pesquisa Web" />
                   </div>
                 </TabsContent>
