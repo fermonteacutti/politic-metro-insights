@@ -47,6 +47,10 @@ function buscarLocais(query: string): ResultadoBusca[] {
 
 async function buscarSenadores(query: string): Promise<ResultadoBusca[]> {
   try {
+    const nQuery = normalize(query);
+    // Only search if query has 3+ chars to avoid too broad matches
+    if (nQuery.length < 3) return [];
+
     const res = await fetch(
       `${BASE}/senadores/lista/atual?campos=IdentificacaoParlamentar`
     );
@@ -66,7 +70,10 @@ async function buscarSenadores(query: string): Promise<ResultadoBusca[]> {
           s?.IdentificacaoParlamentar?.NomeParlamentar ||
           s?.IdentificacaoParlamentar?.NomeCompletoParlamentar ||
           "";
-        return matchNome(nome, query);
+        // Stricter match: every query word must match
+        const nNome = normalize(nome);
+        const words = nQuery.split(/\s+/).filter(Boolean);
+        return words.every((w) => nNome.includes(w));
       })
       .map((s: any) => {
         const id = s?.IdentificacaoParlamentar?.CodigoParlamentar;
@@ -119,15 +126,28 @@ function deduplicar(resultados: ResultadoBusca[]): ResultadoBusca[] {
   const seen = new Map<string, ResultadoBusca>();
   for (const r of resultados) {
     const key = normalize(r.nome);
-    // Check if any existing key contains this name or vice versa
-    let found = false;
+    let foundKey: string | null = null;
     for (const [existingKey] of seen) {
       if (existingKey.includes(key) || key.includes(existingKey)) {
-        found = true;
+        foundKey = existingKey;
         break;
       }
     }
-    if (!found) {
+    if (foundKey) {
+      // Merge: prefer the one with more info (photo, cargo from API)
+      const existing = seen.get(foundKey)!;
+      if (!existing.urlFoto && r.urlFoto) {
+        seen.set(foundKey, { ...existing, urlFoto: r.urlFoto });
+      }
+      if (existing.fonte === "local" && r.fonte !== "local") {
+        // Upgrade to API source but keep local enrichments
+        seen.set(foundKey, {
+          ...r,
+          urlFoto: r.urlFoto || existing.urlFoto,
+          cargo: existing.cargo || r.cargo,
+        });
+      }
+    } else {
       seen.set(key, r);
     }
   }
