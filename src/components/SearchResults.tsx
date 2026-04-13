@@ -21,7 +21,10 @@ const fonteBadge: Record<string, { label: string; className: string }> = {
 function buildLink(r: ResultadoBusca): string {
   if (r.fonte === "local") return `/politico/local/${r.id.replace("local-", "")}`;
   if (r.fonte === "senado") return `/politico/senado/${r.id.replace("senado-", "")}`;
-  if (r.fonte === "web") return `/politico/web/${encodeURIComponent(r.id)}`;
+  if (r.fonte === "web") {
+    const params = new URLSearchParams({ nome: r.nome, partido: r.partido, estado: r.estado, cargo: r.cargo || "" });
+    return `/politico/web/${encodeURIComponent(r.id)}?${params.toString()}`;
+  }
   return `/politico/${r.id}`;
 }
 

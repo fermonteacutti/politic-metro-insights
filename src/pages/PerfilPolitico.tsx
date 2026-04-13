@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useSearchParams } from "react-router-dom";
 import { ArrowLeft, MapPin, Building2, Calendar, FileText, Vote, User, Loader2, AlertTriangle, Globe } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
