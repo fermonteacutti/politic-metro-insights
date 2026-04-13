@@ -184,7 +184,8 @@ function PerfilLocal({ localId }: { localId: string }) {
     if (cached) { setTermometro(cached); return; }
 
     setTermometroLoading(true);
-    calcularTermometro(politico.nome, [], [])
+    const nomeCompleto = `${politico.nome} - ${politico.cargo} - ${politico.partido} - ${politico.estado}`;
+    calcularTermometro(nomeCompleto, [], [])
       .then((result) => { setTermometro(result); setCachedResult(`local-${localId}`, result); })
       .catch((err) => console.error("[PerfilLocal] Erro termômetro:", err))
       .finally(() => setTermometroLoading(false));
@@ -295,7 +296,8 @@ function PerfilSenado({ senadoId }: { senadoId: string }) {
     if (!senadorNome) return;
     const cached = getCachedResult(`senado-${senadoId}`);
     if (cached) { setTermometro(cached); setTermometroLoading(false); return; }
-    calcularTermometro(senadorNome, [], [])
+    const nomeCompleto = `${senadorNome} - Senador(a) - ${senadorData?.partido || ""} - ${senadorData?.estado || ""}`;
+    calcularTermometro(nomeCompleto, [], [])
       .then((result) => { setTermometro(result); setCachedResult(`senado-${senadoId}`, result); })
       .catch((err) => console.error("[PerfilSenado] Erro termômetro:", err))
       .finally(() => setTermometroLoading(false));
@@ -362,7 +364,8 @@ function PerfilWeb({ webId }: { webId: string }) {
     const cached = getCachedResult(`web-${webId}`);
     if (cached) { setTermometro(cached); setTermometroLoading(false); return; }
 
-    calcularTermometro(nomeDisplay, [], [])
+    const nomeCompleto = `${nomeDisplay} - ${cargo} - ${partido} - ${estado}`;
+    calcularTermometro(nomeCompleto, [], [])
       .then((result) => { setTermometro(result); setCachedResult(`web-${webId}`, result); })
       .catch((err) => console.error("[PerfilWeb] Erro termômetro:", err))
       .finally(() => setTermometroLoading(false));
