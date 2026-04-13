@@ -62,6 +62,8 @@ export function getCachedResult(id: string): TermometroResult | null {
 
 export function setCachedResult(id: string, result: TermometroResult): void {
   try {
+    // Don't cache score-0 results — they indicate insufficient data or rate limits
+    if (result.score === 0 && Object.values(result.dimensoes).every(v => v === 0)) return;
     sessionStorage.setItem(CACHE_PREFIX + id, JSON.stringify(result));
   } catch {}
 }
