@@ -9,8 +9,8 @@ export interface PoliticoConhecido {
 }
 
 export const politicosConhecidos: PoliticoConhecido[] = [
-  { id: "lula", nome: "Luiz Inácio Lula da Silva", cargo: "Presidente da República", partido: "PT", estado: "SP", urlFoto: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/43/Lula_-_foto_oficial_2023_%28cropped%29.jpg/440px-Lula_-_foto_oficial_2023_%28cropped%29.jpg", fonte: "local" },
-  { id: "bolsonaro", nome: "Jair Messias Bolsonaro", cargo: "Ex-Presidente / Deputado Federal", partido: "PL", estado: "RJ", urlFoto: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/Jair_Bolsonaro_2019_%28cropped%29.jpg/440px-Jair_Bolsonaro_2019_%28cropped%29.jpg", fonte: "local" },
+  { id: "lula", nome: "Luiz Inácio Lula da Silva", cargo: "Presidente da República", partido: "PT", estado: "SP", fonte: "local" },
+  { id: "bolsonaro", nome: "Jair Messias Bolsonaro", cargo: "Ex-Presidente / Deputado Federal", partido: "PL", estado: "RJ", fonte: "local" },
   { id: "tarcisio", nome: "Tarcísio de Freitas", cargo: "Governador de SP", partido: "Republicanos", estado: "SP", fonte: "local" },
   { id: "paes", nome: "Eduardo Paes", cargo: "Prefeito do Rio de Janeiro", partido: "PSD", estado: "RJ", fonte: "local" },
   { id: "nunes", nome: "Ricardo Nunes", cargo: "Prefeito de São Paulo", partido: "MDB", estado: "SP", fonte: "local" },
