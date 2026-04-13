@@ -51,7 +51,7 @@ async function fetchSenadoresAtuais(): Promise<SenadorResumo[]> {
         email: getText(identificacao, "EmailParlamentar") || undefined,
       } satisfies SenadorResumo;
     })
-    .filter((senador): senador is SenadorResumo => Boolean(senador?.id && senador.nome));
+    .filter((senador): senador is NonNullable<typeof senador> => Boolean(senador?.id && senador.nome));
 }
 
 export async function listarSenadoresAtuais(forceRefresh = false): Promise<SenadorResumo[]> {
