@@ -103,11 +103,6 @@ function TermometroSection({ termometro, termometroLoading }: { termometro: Term
               <DimensionBar key={d.nome} nome={d.nome} score={d.score} peso={d.peso} />
             ))}
           </div>
-          {!termometro && !termometroLoading && (
-            <p className="text-xs text-muted-foreground mt-3">
-              ⚖️ Algoritmo de pontuação em desenvolvimento — dados preliminares.
-            </p>
-          )}
         </div>
       </div>
     </section>
@@ -394,9 +389,9 @@ function PerfilWeb({ webId }: { webId: string }) {
         <section className="py-4">
           <div className="container">
             <div className="max-w-3xl mx-auto">
-              <div className="flex items-start gap-2 p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-700 dark:text-purple-400 text-xs">
-                <Globe size={14} className="shrink-0 mt-0.5" />
-                <span>Dados obtidos via pesquisa web — informações podem ser limitadas ou imprecisas.</span>
+              <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 text-xs">
+                <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+                <span>⚠️ Dados baseados em histórico público e declarações — sem votações parlamentares registradas</span>
               </div>
             </div>
           </div>
