@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useSearchParams } from "react-router-dom";
 import { ArrowLeft, MapPin, Building2, Calendar, FileText, Vote, User, Loader2, AlertTriangle, Globe } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -353,12 +353,14 @@ function PerfilSenado({ senadoId }: { senadoId: string }) {
 
 // ==================== WEB SEARCH POLITICIAN ====================
 function PerfilWeb({ webId }: { webId: string }) {
+  const [searchParams] = useSearchParams();
   const [termometro, setTermometro] = useState<TermometroResult | null>(null);
   const [termometroLoading, setTermometroLoading] = useState(true);
 
-  // Extract name from the ID (web-nome-normalizado-index)
-  const nomeParts = decodeURIComponent(webId).replace(/^web-/, "").replace(/-\d+$/, "").split("-");
-  const nomeDisplay = nomeParts.map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+  const nomeDisplay = searchParams.get("nome") || decodeURIComponent(webId).replace(/^web-/, "").replace(/-/g, " ");
+  const partido = searchParams.get("partido") || "—";
+  const estado = searchParams.get("estado") || "—";
+  const cargo = searchParams.get("cargo") || "Político(a)";
 
   useEffect(() => {
     if (!nomeDisplay) return;
@@ -377,9 +379,9 @@ function PerfilWeb({ webId }: { webId: string }) {
       <main className="flex-1">
         <PerfilHeader
           nome={nomeDisplay}
-          partido="—"
-          estado="—"
-          cargo="Político (via pesquisa web)"
+          partido={partido}
+          estado={estado}
+          cargo={cargo}
           termometro={termometro}
           termometroLoading={termometroLoading}
           badges={
@@ -436,6 +438,9 @@ function PerfilWeb({ webId }: { webId: string }) {
                 <TabsContent value="dados">
                   <div className="bg-card rounded-2xl border border-border p-6 space-y-4">
                     <InfoRow label="Nome" value={nomeDisplay} />
+                    <InfoRow label="Cargo" value={cargo} />
+                    <InfoRow label="Partido" value={partido} />
+                    <InfoRow label="Estado" value={estado} />
                     <InfoRow label="Fonte" value="Pesquisa Web" />
                   </div>
                 </TabsContent>
