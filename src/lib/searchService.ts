@@ -9,8 +9,10 @@ export interface ResultadoBusca {
   estado: string;
   urlFoto?: string;
   cargo?: string;
-  fonte: "camara" | "senado" | "local";
+  fonte: "camara" | "senado" | "local" | "web";
 }
+
+const WORKER_URL = "https://politicometro-api.fernando-650.workers.dev";
 
 function normalize(str: string): string {
   return str
@@ -23,9 +25,7 @@ function normalize(str: string): string {
 function matchNome(nome: string, query: string): boolean {
   const nNome = normalize(nome);
   const nQuery = normalize(query);
-  // Match full query
   if (nNome.includes(nQuery)) return true;
-  // Match each word of query
   const words = nQuery.split(/\s+/).filter(Boolean);
   return words.every((w) => nNome.includes(w));
 }
@@ -57,14 +57,14 @@ async function buscarSenadores(query: string): Promise<ResultadoBusca[]> {
         return matchNome(nomeBusca, query) || matchNome(senador.nome, query);
       })
       .map((senador) => ({
-          id: `senado-${senador.id}`,
-          nome: senador.nome,
-          partido: senador.partido,
-          estado: senador.estado,
-          urlFoto: senador.urlFoto,
-          cargo: "Senador(a)",
-          fonte: "senado" as const,
-        }))
+        id: `senado-${senador.id}`,
+        nome: senador.nome,
+        partido: senador.partido,
+        estado: senador.estado,
+        urlFoto: senador.urlFoto,
+        cargo: "Senador(a)",
+        fonte: "senado" as const,
+      }))
       .slice(0, 10);
   } catch (err) {
     console.error("[Busca] Erro ao buscar senadores:", err);
@@ -86,7 +86,6 @@ async function buscarDeputadosComRetry(query: string): Promise<ResultadoBusca[]>
 
     let results = (await buscarDeputados(query)).filter((d) => matchNome(d.nome, query));
 
-    // If no results, retry with first word only
     if (results.length === 0) {
       const firstWord = query.trim().split(/\s+/)[0];
       if (firstWord && firstWord !== query.trim()) {
@@ -97,6 +96,35 @@ async function buscarDeputadosComRetry(query: string): Promise<ResultadoBusca[]>
     return results.map(mapDeputado);
   } catch (err) {
     console.error("[Busca] Erro ao buscar deputados:", err);
+    return [];
+  }
+}
+
+async function buscarViaWorker(query: string): Promise<ResultadoBusca[]> {
+  try {
+    const res = await fetch(`${WORKER_URL}/buscar-politico`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nome: query.trim() }),
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+
+    // Expect array of { nome, partido, estado, cargo, resumo? }
+    if (!Array.isArray(data)) return [];
+
+    return data
+      .filter((p: any) => p.nome)
+      .map((p: any, i: number) => ({
+        id: `web-${normalize(p.nome).replace(/\s+/g, "-")}-${i}`,
+        nome: p.nome,
+        partido: p.partido || "—",
+        estado: p.estado || "—",
+        cargo: p.cargo,
+        fonte: "web" as const,
+      }));
+  } catch (err) {
+    console.error("[Busca] Erro ao buscar via worker:", err);
     return [];
   }
 }
@@ -113,13 +141,11 @@ function deduplicar(resultados: ResultadoBusca[]): ResultadoBusca[] {
       }
     }
     if (foundKey) {
-      // Merge: prefer the one with more info (photo, cargo from API)
       const existing = seen.get(foundKey)!;
       if (!existing.urlFoto && r.urlFoto) {
         seen.set(foundKey, { ...existing, urlFoto: r.urlFoto });
       }
       if (existing.fonte === "local" && r.fonte !== "local") {
-        // Upgrade to API source but keep local enrichments
         seen.set(foundKey, {
           ...r,
           urlFoto: r.urlFoto || existing.urlFoto,
@@ -137,16 +163,21 @@ export async function buscarUnificado(query: string): Promise<ResultadoBusca[]> 
   const q = query.trim();
   if (q.length < 2) return [];
 
-  // Local results (instant)
   const locais = buscarLocais(q);
 
-  // API results in parallel
   const [deputados, senadores] = await Promise.all([
     buscarDeputadosComRetry(q),
     buscarSenadores(q),
   ]);
 
-  // Merge: local first, then API
   const merged = [...locais, ...deputados, ...senadores];
-  return deduplicar(merged);
+  const deduped = deduplicar(merged);
+
+  // If no official results found, try worker web search
+  if (deduped.length === 0) {
+    const webResults = await buscarViaWorker(q);
+    return webResults;
+  }
+
+  return deduped;
 }

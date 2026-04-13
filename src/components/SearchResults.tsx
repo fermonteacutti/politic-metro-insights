@@ -15,12 +15,28 @@ const fonteBadge: Record<string, { label: string; className: string }> = {
   camara: { label: "Câmara", className: "bg-blue-500/10 text-blue-600 border-blue-500/20" },
   senado: { label: "Senado", className: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" },
   local: { label: "Perfil Público", className: "bg-amber-500/10 text-amber-600 border-amber-500/20" },
+  web: { label: "Pesquisa Web", className: "bg-purple-500/10 text-purple-600 border-purple-500/20" },
 };
 
 function buildLink(r: ResultadoBusca): string {
   if (r.fonte === "local") return `/politico/local/${r.id.replace("local-", "")}`;
   if (r.fonte === "senado") return `/politico/senado/${r.id.replace("senado-", "")}`;
+  if (r.fonte === "web") return `/politico/web/${encodeURIComponent(r.id)}`;
   return `/politico/${r.id}`;
+}
+
+function getInitials(nome: string): string {
+  const parts = nome.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  return nome.charAt(0).toUpperCase();
+}
+
+function AvatarFallback({ nome, size = "w-16 h-16", textSize = "text-xl" }: { nome: string; size?: string; textSize?: string }) {
+  return (
+    <div className={`${size} rounded-xl bg-secondary shrink-0 flex items-center justify-center text-muted-foreground ${textSize} font-bold`}>
+      {getInitials(nome)}
+    </div>
+  );
 }
 
 function FotoComFallback({ url, nome, size = "w-16 h-16", textSize = "text-xl" }: { url?: string; nome: string; size?: string; textSize?: string }) {
@@ -36,11 +52,7 @@ function FotoComFallback({ url, nome, size = "w-16 h-16", textSize = "text-xl" }
       />
     );
   }
-  return (
-    <div className={`${size} rounded-xl bg-secondary shrink-0 flex items-center justify-center text-muted-foreground ${textSize} font-bold`}>
-      {nome.charAt(0)}
-    </div>
-  );
+  return <AvatarFallback nome={nome} size={size} textSize={textSize} />;
 }
 
 export default function SearchResults({ results, loading, error, searched }: Props) {
@@ -76,7 +88,7 @@ export default function SearchResults({ results, loading, error, searched }: Pro
   return (
     <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {results.map((r) => {
-        const badge = fonteBadge[r.fonte];
+        const badge = fonteBadge[r.fonte] ?? fonteBadge.local;
         return (
           <Link
             key={r.id}
