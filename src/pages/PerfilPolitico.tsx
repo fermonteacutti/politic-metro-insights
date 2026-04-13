@@ -261,10 +261,11 @@ function PerfilLocal({ localId }: { localId: string }) {
 
                 <TabsContent value="dados">
                   <div className="bg-card rounded-2xl border border-border p-6 space-y-4">
-                    <InfoRow label="Nome" value={politico.nome} />
+                    <InfoRow label="Nome Completo" value={politico.nome} />
                     <InfoRow label="Cargo" value={politico.cargo} />
                     <InfoRow label="Partido" value={politico.partido} />
                     <InfoRow label="Estado" value={politico.estado} />
+                    <InfoRow label="Município" value={politico.municipio || "—"} />
                   </div>
                 </TabsContent>
               </Tabs>
@@ -358,6 +359,8 @@ function PerfilWeb({ webId }: { webId: string }) {
   const partido = searchParams.get("partido") || "—";
   const estado = searchParams.get("estado") || "—";
   const cargo = searchParams.get("cargo") || "Político(a)";
+  const municipio = searchParams.get("municipio") || "";
+  const descricao = searchParams.get("descricao") || "";
 
   useEffect(() => {
     if (!nomeDisplay) return;
@@ -435,10 +438,12 @@ function PerfilWeb({ webId }: { webId: string }) {
 
                 <TabsContent value="dados">
                   <div className="bg-card rounded-2xl border border-border p-6 space-y-4">
-                    <InfoRow label="Nome" value={nomeDisplay} />
+                    <InfoRow label="Nome Completo" value={nomeDisplay} />
                     <InfoRow label="Cargo" value={cargo} />
                     <InfoRow label="Partido" value={partido} />
                     <InfoRow label="Estado" value={estado} />
+                    <InfoRow label="Município" value={municipio || "—"} />
+                    {descricao && <InfoRow label="Descrição" value={descricao} />}
                     <InfoRow label="Fonte" value="Pesquisa Web" />
                   </div>
                 </TabsContent>
