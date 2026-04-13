@@ -54,11 +54,14 @@ export default function Index() {
   const [suggestions, setSuggestions] = useState<ResultadoBusca[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const autocompleteRequestRef = useRef(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleSearch = async (query?: string) => {
     const q = (query ?? searchQuery).trim();
     if (!q) return;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    autocompleteRequestRef.current += 1;
     setShowSuggestions(false);
     setSuggestions([]);
     setSearchLoading(true);
@@ -78,6 +81,8 @@ export default function Index() {
   const handleInputChange = useCallback((value: string) => {
     setSearchQuery(value);
     if (debounceRef.current) clearTimeout(debounceRef.current);
+    const requestId = autocompleteRequestRef.current + 1;
+    autocompleteRequestRef.current = requestId;
 
     if (value.trim().length < 2) {
       setSuggestions([]);
@@ -88,10 +93,13 @@ export default function Index() {
     debounceRef.current = setTimeout(async () => {
       try {
         const results = await buscarUnificado(value.trim());
+        if (autocompleteRequestRef.current !== requestId) return;
         setSuggestions(results.slice(0, 6));
-        setShowSuggestions(true);
+        setShowSuggestions(results.length > 0);
       } catch {
+        if (autocompleteRequestRef.current !== requestId) return;
         setSuggestions([]);
+        setShowSuggestions(false);
       }
     }, 300);
   }, []);

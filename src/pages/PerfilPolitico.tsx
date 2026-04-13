@@ -7,6 +7,7 @@ import ThermometerGauge from "@/components/ThermometerGauge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { obterDeputado, obterEventos, obterProposicoes, type DeputadoDetalhe, type Evento, type Proposicao } from "@/lib/camaraApi";
+import { obterSenadorAtual } from "@/lib/senadoApi";
 import { calcularTermometro, getCachedResult, setCachedResult, type TermometroResult } from "@/services/termometroService";
 import { politicosConhecidos } from "@/data/politicosConhecidos";
 
@@ -233,22 +234,11 @@ function PerfilSenado({ senadoId }: { senadoId: string }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const BASE = "https://politicometro-api.fernando-650.workers.dev/camara";
-    fetch(`${BASE}/senadores/lista/atual?campos=IdentificacaoParlamentar`)
-      .then((r) => r.json())
-      .then((json) => {
-        const lista =
-          json?.dados?.ListaParlamentarEmExercicio?.Parlamentares?.Parlamentar ||
-          json?.ListaParlamentarEmExercicio?.Parlamentares?.Parlamentar ||
-          [];
-        const arr = Array.isArray(lista) ? lista : [lista];
-        const found = arr.find(
-          (s: any) => String(s?.IdentificacaoParlamentar?.CodigoParlamentar) === senadoId
-        );
-        if (found) {
-          const ip = found.IdentificacaoParlamentar;
-          setSenadorNome(ip.NomeParlamentar || ip.NomeCompletoParlamentar);
-          setSenadorData(ip);
+    obterSenadorAtual(senadoId)
+      .then((senador) => {
+        if (senador) {
+          setSenadorNome(senador.nome);
+          setSenadorData(senador);
         }
       })
       .catch((err) => console.error("[PerfilSenado] Erro:", err))
@@ -309,8 +299,8 @@ function PerfilSenado({ senadoId }: { senadoId: string }) {
             </Link>
 
             <div className="flex flex-col md:flex-row gap-5 items-center md:items-start">
-              {senadorData?.UrlFotoParlamentar ? (
-                <img src={senadorData.UrlFotoParlamentar} alt={senadorNome} className="w-20 h-20 rounded-xl object-cover bg-secondary shrink-0" />
+              {senadorData?.urlFoto ? (
+                <img src={senadorData.urlFoto} alt={senadorNome} className="w-20 h-20 rounded-xl object-cover bg-secondary shrink-0" />
               ) : (
                 <div className="w-20 h-20 rounded-xl bg-secondary shrink-0 flex items-center justify-center text-2xl font-bold text-muted-foreground">
                   {senadorNome.charAt(0)}
@@ -322,11 +312,11 @@ function PerfilSenado({ senadoId }: { senadoId: string }) {
                   {senadorNome}
                 </h1>
                 <div className="flex flex-wrap gap-3 text-primary-foreground/70 text-sm justify-center md:justify-start">
-                  {senadorData?.SiglaPartidoParlamentar && (
-                    <span className="flex items-center gap-1"><Building2 size={14} /> {senadorData.SiglaPartidoParlamentar}</span>
+                  {senadorData?.partido && (
+                    <span className="flex items-center gap-1"><Building2 size={14} /> {senadorData.partido}</span>
                   )}
-                  {senadorData?.UfParlamentar && (
-                    <span className="flex items-center gap-1"><MapPin size={14} /> {senadorData.UfParlamentar}</span>
+                  {senadorData?.estado && (
+                    <span className="flex items-center gap-1"><MapPin size={14} /> {senadorData.estado}</span>
                   )}
                 </div>
                 <p className="mt-1 text-primary-foreground/50 text-xs">Senador(a)</p>

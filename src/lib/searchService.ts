@@ -1,7 +1,6 @@
-import { buscarDeputados, type DeputadoResumo } from "@/lib/camaraApi";
-import { politicosConhecidos, type PoliticoConhecido } from "@/data/politicosConhecidos";
-
-const BASE = "https://politicometro-api.fernando-650.workers.dev/camara";
+import { buscarDeputados } from "@/lib/camaraApi";
+import { politicosConhecidos } from "@/data/politicosConhecidos";
+import { listarSenadoresAtuais } from "@/lib/senadoApi";
 
 export interface ResultadoBusca {
   id: string;
@@ -48,46 +47,24 @@ function buscarLocais(query: string): ResultadoBusca[] {
 async function buscarSenadores(query: string): Promise<ResultadoBusca[]> {
   try {
     const nQuery = normalize(query);
-    // Only search if query has 3+ chars to avoid too broad matches
     if (nQuery.length < 3) return [];
 
-    const res = await fetch(
-      `${BASE}/senadores/lista/atual?campos=IdentificacaoParlamentar`
-    );
-    if (!res.ok) return [];
-    const json = await res.json();
+    const senadores = await listarSenadoresAtuais();
 
-    const lista =
-      json?.dados?.ListaParlamentarEmExercicio?.Parlamentares?.Parlamentar ||
-      json?.ListaParlamentarEmExercicio?.Parlamentares?.Parlamentar ||
-      [];
-
-    const arr = Array.isArray(lista) ? lista : [lista];
-
-    return arr
-      .filter((s: any) => {
-        const nome =
-          s?.IdentificacaoParlamentar?.NomeParlamentar ||
-          s?.IdentificacaoParlamentar?.NomeCompletoParlamentar ||
-          "";
-        // Stricter match: every query word must match
-        const nNome = normalize(nome);
-        const words = nQuery.split(/\s+/).filter(Boolean);
-        return words.every((w) => nNome.includes(w));
+    return senadores
+      .filter((senador) => {
+        const nomeBusca = senador.nomeCompleto || senador.nome;
+        return matchNome(nomeBusca, query) || matchNome(senador.nome, query);
       })
-      .map((s: any) => {
-        const id = s?.IdentificacaoParlamentar?.CodigoParlamentar;
-        const ip = s?.IdentificacaoParlamentar || {};
-        return {
-          id: `senado-${id}`,
-          nome: ip.NomeParlamentar || ip.NomeCompletoParlamentar || "",
-          partido: ip.SiglaPartidoParlamentar || "",
-          estado: ip.UfParlamentar || "",
-          urlFoto: ip.UrlFotoParlamentar || undefined,
+      .map((senador) => ({
+          id: `senado-${senador.id}`,
+          nome: senador.nome,
+          partido: senador.partido,
+          estado: senador.estado,
+          urlFoto: senador.urlFoto,
           cargo: "Senador(a)",
           fonte: "senado" as const,
-        };
-      })
+        }))
       .slice(0, 10);
   } catch (err) {
     console.error("[Busca] Erro ao buscar senadores:", err);
@@ -97,17 +74,7 @@ async function buscarSenadores(query: string): Promise<ResultadoBusca[]> {
 
 async function buscarDeputadosComRetry(query: string): Promise<ResultadoBusca[]> {
   try {
-    let results = await buscarDeputados(query);
-
-    // If no results, retry with first word only
-    if (results.length === 0) {
-      const firstWord = query.trim().split(/\s+/)[0];
-      if (firstWord && firstWord !== query.trim()) {
-        results = await buscarDeputados(firstWord);
-      }
-    }
-
-    return results.map((d) => ({
+    const mapDeputado = (d: Awaited<ReturnType<typeof buscarDeputados>>[number]) => ({
       id: String(d.id),
       nome: d.nome,
       partido: d.siglaPartido,
@@ -115,7 +82,19 @@ async function buscarDeputadosComRetry(query: string): Promise<ResultadoBusca[]>
       urlFoto: d.urlFoto,
       cargo: "Deputado(a) Federal",
       fonte: "camara" as const,
-    }));
+    });
+
+    let results = (await buscarDeputados(query)).filter((d) => matchNome(d.nome, query));
+
+    // If no results, retry with first word only
+    if (results.length === 0) {
+      const firstWord = query.trim().split(/\s+/)[0];
+      if (firstWord && firstWord !== query.trim()) {
+        results = (await buscarDeputados(firstWord)).filter((d) => matchNome(d.nome, query));
+      }
+    }
+
+    return results.map(mapDeputado);
   } catch (err) {
     console.error("[Busca] Erro ao buscar deputados:", err);
     return [];
