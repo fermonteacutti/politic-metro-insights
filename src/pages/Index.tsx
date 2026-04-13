@@ -92,7 +92,7 @@ export default function Index() {
 
     debounceRef.current = setTimeout(async () => {
       try {
-        const results = await buscarUnificado(value.trim());
+        const results = await buscarUnificado(value.trim(), true);
         if (autocompleteRequestRef.current !== requestId) return;
         setSuggestions(results.slice(0, 6));
         setShowSuggestions(results.length > 0);

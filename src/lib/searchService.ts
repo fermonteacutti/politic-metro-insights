@@ -158,7 +158,7 @@ function deduplicar(resultados: ResultadoBusca[]): ResultadoBusca[] {
   return Array.from(seen.values());
 }
 
-export async function buscarUnificado(query: string): Promise<ResultadoBusca[]> {
+export async function buscarUnificado(query: string, skipWorker = false): Promise<ResultadoBusca[]> {
   const q = query.trim();
   if (q.length < 2) return [];
 
@@ -172,8 +172,8 @@ export async function buscarUnificado(query: string): Promise<ResultadoBusca[]> 
   const merged = [...locais, ...deputados, ...senadores];
   const deduped = deduplicar(merged);
 
-  // If no official results found, try worker web search
-  if (deduped.length === 0) {
+  // If no official results found, try worker web search (skip during autocomplete)
+  if (deduped.length === 0 && !skipWorker) {
     const webResults = await buscarViaWorker(q);
     return webResults;
   }
