@@ -9,6 +9,8 @@ export interface ResultadoBusca {
   estado: string;
   urlFoto?: string;
   cargo?: string;
+  municipio?: string;
+  descricao?: string;
   fonte: "camara" | "senado" | "local" | "web";
 }
 
@@ -118,6 +120,8 @@ async function buscarViaWorker(query: string): Promise<ResultadoBusca[]> {
         partido: data.partido || "—",
         estado: data.estado || "—",
         cargo: data.cargo || "Político(a)",
+        municipio: data.municipio || "",
+        descricao: data.descricao || "",
         fonte: "web" as const,
       }];
     }
