@@ -261,10 +261,11 @@ function PerfilLocal({ localId }: { localId: string }) {
 
                 <TabsContent value="dados">
                   <div className="bg-card rounded-2xl border border-border p-6 space-y-4">
-                    <InfoRow label="Nome" value={politico.nome} />
+                    <InfoRow label="Nome Completo" value={politico.nome} />
                     <InfoRow label="Cargo" value={politico.cargo} />
                     <InfoRow label="Partido" value={politico.partido} />
                     <InfoRow label="Estado" value={politico.estado} />
+                    <InfoRow label="Município" value={politico.municipio || "—"} />
                   </div>
                 </TabsContent>
               </Tabs>
@@ -342,6 +343,50 @@ function PerfilSenado({ senadoId }: { senadoId: string }) {
         </section>
 
         <TermometroSection termometro={termometro} termometroLoading={termometroLoading} />
+
+        <section className="pb-16">
+          <div className="container">
+            <div className="max-w-3xl mx-auto">
+              <Tabs defaultValue="dados">
+                <TabsList className="w-full grid grid-cols-3 mb-6">
+                  <TabsTrigger value="votacoes" className="gap-1.5 text-xs sm:text-sm">
+                    <Vote size={14} className="hidden sm:block" /> Votações
+                  </TabsTrigger>
+                  <TabsTrigger value="projetos" className="gap-1.5 text-xs sm:text-sm">
+                    <FileText size={14} className="hidden sm:block" /> Projetos
+                  </TabsTrigger>
+                  <TabsTrigger value="dados" className="gap-1.5 text-xs sm:text-sm">
+                    <User size={14} className="hidden sm:block" /> Dados Pessoais
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="votacoes">
+                  <div className="text-center py-10 text-muted-foreground">
+                    <Vote size={28} className="mx-auto mb-3 opacity-30" />
+                    <p className="text-sm font-medium">Votações não disponíveis para senadores</p>
+                    <p className="text-xs mt-1">Dados baseados em histórico público e declarações</p>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="projetos">
+                  <div className="text-center py-10 text-muted-foreground">
+                    <FileText size={28} className="mx-auto mb-3 opacity-30" />
+                    <p className="text-sm font-medium">Projetos legislativos não disponíveis</p>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="dados">
+                  <div className="bg-card rounded-2xl border border-border p-6 space-y-4">
+                    <InfoRow label="Nome Completo" value={senadorData?.nomeCompleto || senadorNome} />
+                    <InfoRow label="Cargo" value="Senador(a)" />
+                    <InfoRow label="Partido" value={senadorData?.partido || "—"} />
+                    <InfoRow label="Estado" value={senadorData?.estado || "—"} />
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </div>
+          </div>
+        </section>
       </main>
       <Footer />
     </div>
@@ -358,6 +403,8 @@ function PerfilWeb({ webId }: { webId: string }) {
   const partido = searchParams.get("partido") || "—";
   const estado = searchParams.get("estado") || "—";
   const cargo = searchParams.get("cargo") || "Político(a)";
+  const municipio = searchParams.get("municipio") || "";
+  const descricao = searchParams.get("descricao") || "";
 
   useEffect(() => {
     if (!nomeDisplay) return;
@@ -435,10 +482,12 @@ function PerfilWeb({ webId }: { webId: string }) {
 
                 <TabsContent value="dados">
                   <div className="bg-card rounded-2xl border border-border p-6 space-y-4">
-                    <InfoRow label="Nome" value={nomeDisplay} />
+                    <InfoRow label="Nome Completo" value={nomeDisplay} />
                     <InfoRow label="Cargo" value={cargo} />
                     <InfoRow label="Partido" value={partido} />
                     <InfoRow label="Estado" value={estado} />
+                    <InfoRow label="Município" value={municipio || "—"} />
+                    {descricao && <InfoRow label="Descrição" value={descricao} />}
                     <InfoRow label="Fonte" value="Pesquisa Web" />
                   </div>
                 </TabsContent>
