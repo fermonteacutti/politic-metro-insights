@@ -110,19 +110,18 @@ async function buscarViaWorker(query: string): Promise<ResultadoBusca[]> {
     if (!res.ok) return [];
     const data = await res.json();
 
-    // Expect array of { nome, partido, estado, cargo, resumo? }
-    if (!Array.isArray(data)) return [];
-
-    return data
-      .filter((p: any) => p.nome)
-      .map((p: any, i: number) => ({
-        id: `web-${normalize(p.nome).replace(/\s+/g, "-")}-${i}`,
-        nome: p.nome,
-        partido: p.partido || "—",
-        estado: p.estado || "—",
-        cargo: p.cargo,
+    // Worker returns { encontrado, nome, cargo, partido, estado, descricao }
+    if (data?.encontrado && data.nome) {
+      return [{
+        id: `web-${normalize(data.nome).replace(/\s+/g, "-")}`,
+        nome: data.nome,
+        partido: data.partido || "—",
+        estado: data.estado || "—",
+        cargo: data.cargo || "Político(a)",
         fonte: "web" as const,
-      }));
+      }];
+    }
+    return [];
   } catch (err) {
     console.error("[Busca] Erro ao buscar via worker:", err);
     return [];
